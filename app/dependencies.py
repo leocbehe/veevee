@@ -21,6 +21,10 @@ def verify_password(plain_password, hashed_password):
 def get_password_hash(password):
     return pwd_context.hash(password)
 
+def hash_user_password(user: models.User):
+    user.password = get_password_hash(user.password)
+    return user
+
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:

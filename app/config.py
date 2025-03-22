@@ -15,6 +15,6 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int
     domains: Set[str] = set()
 
-    model_config: SettingsConfigDict = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8") # Corrected Line
+    model_config: SettingsConfigDict = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 settings = Settings()

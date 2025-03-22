@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from datetime import datetime
-from .routers import users, chatbots, documents
+from .routers import users, auth
 
 app = FastAPI(
     title="VeeVee",
@@ -11,6 +11,7 @@ app = FastAPI(
 )
 
 app.include_router(users.router)
+app.include_router(auth.router)
 
 @app.get("/")
 def root():
