@@ -107,11 +107,9 @@ class Message(MessageBase):
     class Config:
         orm_mode = True
 
-"""Message schemas"""
+"""JWT and auth schemas"""
 
-class Token(BaseModel):
-    token: str
-    type: str
-
-class TokenData(BaseModel):
+class JWTPayload(BaseModel):
+    user_id: str
     username: str
+    issued_at: int

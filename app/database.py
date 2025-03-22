@@ -67,7 +67,3 @@ def get_user(db: Session, user_id: str):
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
-
-def get_user_by_token_data(token_data: schemas.TokenData, db: Session = get_db):
-    user = db.query(models.User).filter(models.User.username == token_data.username).first()
-    return user
