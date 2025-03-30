@@ -30,18 +30,21 @@ class User(UserBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 """Chatbot schemas"""
 
 class ChatbotBase(BaseModel):
     chatbot_name: str
     description: Optional[str] = None
-    model_file: str
+    model_file: Optional[str] = None
     configuration: Optional[dict] = None
 
 class ChatbotCreate(ChatbotBase):
-    pass
+    chatbot_id: uuid.UUID
+    owner_id: uuid.UUID
+    created_at: datetime
+    is_active: bool
 
 class Chatbot(ChatbotBase):
     chatbot_id: uuid.UUID
@@ -50,7 +53,10 @@ class Chatbot(ChatbotBase):
     is_active: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+class ChatbotUpdate(Chatbot):
+    pass
 
 """RAG document schemas"""
 
@@ -68,7 +74,7 @@ class KnowledgeBaseDocument(KnowledgeBaseDocumentBase):
     upload_date: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 """Conversation schemas"""
 
@@ -86,7 +92,7 @@ class Conversation(ConversationBase):
     end_time: Optional[datetime] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 """Message schemas"""
 
@@ -105,7 +111,7 @@ class Message(MessageBase):
     timestamp: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 """JWT and auth schemas"""
 
@@ -113,3 +119,7 @@ class JWTPayload(BaseModel):
     user_id: str
     username: str
     issued_at: int
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str

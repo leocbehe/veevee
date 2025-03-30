@@ -8,6 +8,7 @@ import uuid
 
 Base = declarative_base()
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -23,6 +24,7 @@ class User(Base):
     chatbots = relationship("Chatbot", back_populates="owner")
     conversations = relationship("Conversation", back_populates="user")
 
+
 class Chatbot(Base):
     __tablename__ = "chatbots"
 
@@ -30,13 +32,14 @@ class Chatbot(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.user_id"))
     chatbot_name = Column(String)
     description = Column(String, nullable=True)
-    modelfile = Column(String)
+    modelfile = Column(String, nullable=True)
     configuration = Column(JSONB, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     is_active = Column(Boolean, default=True)
     owner = relationship("User", back_populates="chatbots")
     documents = relationship("KnowledgeBaseDocument", back_populates="chatbot")
     conversations = relationship("Conversation", back_populates="chatbot")
+
 
 class KnowledgeBaseDocument(Base):
     __tablename__ = "knowledgebasedocuments"
@@ -48,8 +51,9 @@ class KnowledgeBaseDocument(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     document_metadata = Column(JSONB, nullable=True)
     chunked_text = Column(Text)
-    embedding = Column(Vector(1536)) # Assuming your embeddings are 1536 dimensions, adjust if needed.
+    embedding = Column(Vector(1536))  # Assuming your embeddings are 1536 dimensions, adjust if needed.
     chatbot = relationship("Chatbot", back_populates="documents")
+
 
 class Conversation(Base):
     __tablename__ = "conversations"
@@ -63,6 +67,7 @@ class Conversation(Base):
     user = relationship("User", back_populates="conversations")
     messages = relationship("Message", back_populates="conversation")
 
+
 class Message(Base):
     __tablename__ = "messages"
 
@@ -72,4 +77,3 @@ class Message(Base):
     message_metadata = Column(JSONB, nullable=True)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     conversation = relationship("Conversation", back_populates="messages")
-

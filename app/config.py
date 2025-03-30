@@ -1,5 +1,4 @@
 from typing import Set
-from pydantic import PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -14,6 +13,7 @@ class Settings(BaseSettings):
     algorithm: str
     access_token_expire_minutes: int
     domains: Set[str] = set()
+    hf_token: str
 
     model_config: SettingsConfigDict = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
