@@ -29,7 +29,8 @@ class Chatbot(Base):
     __tablename__ = "chatbots"
 
     chatbot_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.user_id"))
+    owner_id = Column(UUID(as_uuid=True), ForeignKey("users.user_id"))
+    model_path = Column(String, nullable=True) # Can be a local path or a huggingface model name
     chatbot_name = Column(String)
     description = Column(String, nullable=True)
     modelfile = Column(String, nullable=True)
