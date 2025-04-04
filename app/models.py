@@ -62,6 +62,7 @@ class Conversation(Base):
     conversation_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     chatbot_id = Column(UUID(as_uuid=True), ForeignKey("chatbots.chatbot_id"))
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.user_id"))
+    description = Column(String, nullable=True)
     start_time = Column(DateTime(timezone=True), server_default=func.now())
     last_modified = Column(DateTime(timezone=True), nullable=True)
     chatbot = relationship("Chatbot", back_populates="conversations")

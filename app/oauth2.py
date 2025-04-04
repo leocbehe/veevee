@@ -6,7 +6,7 @@ from . import schemas, database, models
 from sqlalchemy.orm import Session
 from .config import settings
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 SECRET_KEY = settings.secret_key
 ALGORITHM = "HS256"
@@ -20,12 +20,15 @@ def create_access_token(data: dict):
     return encoded_jwt
 
 def verify_token(token: str, credentials_exception):
+    print("Verifying token...")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("user_id")
+        user_id: str = payload.get("sub")
+        username: str = payload.get("username")
+        issued_at: str = payload.get("issued_at")
         if user_id is None:
             raise credentials_exception
-        token_data = schemas.TokenData(id=user_id)
+        token_data = schemas.TokenData(user_id=user_id, username=username, issued_at=issued_at)
     except JWTError:
         raise credentials_exception
     return token_data
@@ -38,7 +41,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     )
 
     token_data = verify_token(token, credentials_exception)
-    user = db.query(models.User).filter(models.User.id == token_data.id).first()
+    user = db.query(models.User).filter(models.User.user_id == token_data.user_id).first()
     if user is None:
         raise credentials_exception
     return user

@@ -57,9 +57,56 @@ def landing_page():
         st.error(f"Error connecting to the chatbot service: {str(e)}")
 
 def chatbot_page():
+    h1, h2, h3 = st.columns([0.3, 0.4, 0.3])
+    with h1:
+        if st.button("Back to Landing Page"):
+            st.session_state.current_page = "landing_page"
+            st.rerun()
+    with h2:
+        if st.button("New Conversation"):
+            st.session_state.conversation_id = create_conversation()
+            st.session_state.current_page = "conversation_page"
+            st.rerun()
+    with h3:
+        pass
     st.write(f"**Chatbot Name:** {st.session_state.chatbot_name}")
     st.write(f"**Chatbot Description:** {st.session_state.chatbot_description}")
     st.write(f"**Chatbot Model Path:** {st.session_state.chatbot_model_path}")
+
+    # display all conversations for this chatbot 
+    try:
+        response = requests.get(
+            f"http://localhost:8000/conversations/{st.session_state.chatbot_id}",
+            headers={"Authorization": f"Bearer {st.session_state.access_token}"}
+        )
+        if response.status_code == 200:
+            conversations = response.json()
+            st.subheader("Conversations:")
+            if conversations:
+                for conversation in conversations:
+                    col1, col2 = st.columns([0.8, 0.2])
+                    with col1:
+                        st.write(f"- {conversation['conversation_id']}")
+                    with col2:
+                        if st.button(f"Select {conversation['conversation_id']}", key=f"select_{conversation['conversation_id']}"):
+                            st.session_state.conversation_id = conversation['conversation_id']
+                            st.session_state.current_page = "conversation_page"
+                            st.rerun()
+    except Exception as e:
+        st.error(f"Error connecting to the chatbot service: {str(e)}")
+
+def conversation_page():
+    st.write(f"Chatting with {st.session_state.chatbot_name}")
+    if st.session_state.conversation_description:
+        st.write(f"Topic: {st.session_state.conversation_description}")
+    h1, h2 = st.columns([0.5, 0.5])
+    with h1:
+        if st.button("Back to Chatbot Page"):
+            st.session_state.current_page = "chatbot_page"
+            st.rerun()
+    with h2:
+        if st.button("placeholder"):
+            pass
     
 # Function to check if token is valid
 def is_token_valid():
@@ -78,16 +125,18 @@ def initialize_session_state():
         st.session_state.user_id = None
     if "chatbot_id" not in st.session_state:
         st.session_state.chatbot_id = None
-    if "conversation_id" not in st.session_state:
-        st.session_state.conversation_id = None
     if "chatbot_name" not in st.session_state:
         st.session_state.chatbot_name = None
     if "chatbot_description" not in st.session_state:
         st.session_state.chatbot_description = None
     if "chatbot_model_path" not in st.session_state:
         st.session_state.chatbot_model_path = None
+    if "conversation_id" not in st.session_state:
+        st.session_state.conversation_id = None
+    if "conversation_description" not in st.session_state:
+        st.session_state.conversation_description = None
     if "current_page" not in st.session_state:
-        st.session_state.current_page = "landing"
+        st.session_state.current_page = "landing_page"
 
 def create_chatbot():
     try:
@@ -110,6 +159,31 @@ def create_chatbot():
             st.error(f"Failed to create chatbot: {response.status_code} - {response.text}")
     except Exception as e:
         st.error(f"Error connecting to the chatbot service: {str(e)}")
+
+def create_conversation():
+    st.session_state.conversation_id = str(uuid.uuid4())
+    try:
+        response = requests.post(
+            f"http://localhost:8000/conversations/{st.session_state.chatbot_id}",
+            json={
+                "user_id": st.session_state.user_id,
+                "conversation_id": st.session_state.conversation_id,
+                "chatbot_id": st.session_state.chatbot_id,
+                "description": st.session_state.conversation_description_input,
+                "start_time": datetime.datetime.now().isoformat(),
+                "last_modified": datetime.datetime.now().isoformat(),
+                "is_active": True
+            },
+            headers={"Authorization": f"Bearer {st.session_state.access_token}"}
+        )
+        if response.status_code == 200:
+            st.success("Conversation created successfully!")
+        else:
+            st.error(f"Failed to create conversation: {response.status_code} - {response.text}")
+    except Exception as e:
+        st.error(f"Error connecting to the chatbot service: {str(e)}")
+        return None
+    return st.session_state.conversation_id
 
 def login():
     try:
@@ -146,12 +220,15 @@ initialize_session_state()
 # CONDITIONAL RENDERING --------------------------------------------------------------------------------------------
 
 if 'access_token' in st.session_state and st.session_state.access_token and is_token_valid():
-    if st.session_state.current_page == "landing":
+    if st.session_state.current_page == "landing_page":
         st.title(f"VeeVee UI - Welcome, {st.session_state.username}!")
         landing_page()
     elif st.session_state.current_page == "chatbot_page":
         st.title(f"VeeVee UI - Chatbot: {st.session_state.chatbot_name}")
         chatbot_page()
+    elif st.session_state.current_page == "connversation_page":
+        st.title(f"VeeVee UI - Conversation: {st.session_state.conversation_id}")
+        conversation_page()
 else:
     st.title("VeeVee UI")
     st.warning("Warning: Refreshing the page will log you out!")

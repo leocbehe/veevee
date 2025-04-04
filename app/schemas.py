@@ -76,18 +76,26 @@ class KnowledgeBaseDocument(KnowledgeBaseDocumentBase):
 class ConversationBase(BaseModel):
     pass
 
-class ConversationCreate(ConversationBase):
-    pass
-
 class Conversation(ConversationBase):
-    conversation_id: uuid.UUID
     chatbot_id: uuid.UUID
     user_id: uuid.UUID
+    conversation_id: uuid.UUID
+    description: Optional[str] = None
     start_time: datetime
-    end_time: Optional[datetime] = None
+    last_modified: Optional[datetime] = None
 
     class Config:
         from_attributes = True
+
+class ConversationCreate(ConversationBase):
+    user_id: uuid.UUID
+    chatbot_id: uuid.UUID
+    description: Optional[str] = None
+    start_time: datetime
+    last_modified: Optional[datetime] = None
+
+class ConversationUpdate(ConversationBase):
+    pass
 
 """Message schemas"""
 
@@ -110,7 +118,7 @@ class Message(MessageBase):
 
 """JWT and auth schemas"""
 
-class JWTPayload(BaseModel):
+class TokenData(BaseModel):
     user_id: str
     username: str
     issued_at: int
