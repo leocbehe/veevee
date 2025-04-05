@@ -46,6 +46,17 @@ def read_conversations(skip: int = 0, limit: int = 100, db: Session = Depends(da
     conversations = db.query(models.Conversation).filter(models.Conversation.user_id == current_user.user_id).offset(skip).limit(limit).all()
     return conversations
 
+@router.get("/by_chatbot/{chatbot_id}", response_model=List[schemas.Conversation])
+def read_conversations_by_chatbot(chatbot_id: str, db: Session = Depends(database.get_db), skip: int = 0, limit: int = 10, current_user: models.User = Depends(get_current_user)):
+    """
+    Retrieve a list of conversations by chatbot ID.
+    """
+    chatbot = db.query(models.Chatbot).filter(models.Chatbot.chatbot_id == chatbot_id).first()
+    if current_user.user_id != chatbot.owner_id:
+        raise HTTPException(status_code=403, detail="Forbidden: You are not the owner of this chatbot")
+    conversations = db.query(models.Conversation).filter(models.Conversation.chatbot_id == chatbot_id).offset(skip).limit(limit).all()
+    return conversations
+
 
 @router.put("/{conversation_id}", response_model=schemas.Conversation)
 def update_conversation(conversation_id: str, conversation: schemas.ConversationUpdate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_user)):

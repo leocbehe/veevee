@@ -3,6 +3,7 @@ import datetime
 import requests
 import uuid
 from jose import jwt
+import pandas as pd
 
 # DECLARATIONS --------------------------------------------------------------------------------------------
 
@@ -76,22 +77,39 @@ def chatbot_page():
     # display all conversations for this chatbot 
     try:
         response = requests.get(
-            f"http://localhost:8000/conversations/{st.session_state.chatbot_id}",
+            f"http://localhost:8000/conversations/by_chatbot/{st.session_state.chatbot_id}",
             headers={"Authorization": f"Bearer {st.session_state.access_token}"}
         )
+        print(f"Response status code: {response.status_code}")
         if response.status_code == 200:
             conversations = response.json()
-            st.subheader("Conversations:")
             if conversations:
+                a1,a2,a3,a4 = st.columns([0.25, 0.25, 0.25, 0.25], border=True)
+                with a1:
+                    st.write("Conversation ID")
+                with a2:
+                    st.write("Description")
+                with a3:
+                    st.write("Start Time")
+                with a4:
+                    st.write("Select")
                 for conversation in conversations:
-                    col1, col2 = st.columns([0.8, 0.2])
-                    with col1:
-                        st.write(f"- {conversation['conversation_id']}")
-                    with col2:
-                        if st.button(f"Select {conversation['conversation_id']}", key=f"select_{conversation['conversation_id']}"):
-                            st.session_state.conversation_id = conversation['conversation_id']
+                    c1,c2,c3,c4 = st.columns([0.25, 0.25, 0.25, 0.25], border=True)
+                    with c1:
+                        st.write("..."+str(conversation['conversation_id'])[-8:])
+                    with c2:
+                        st.write(conversation['description'])
+                    with c3:
+                        st.write(conversation['start_time'])
+                    with c4:
+                        if st.button("Select", key=conversation['conversation_id']):
+                            st.session_state.conversation_id = "..."+str(conversation['conversation_id'])[-8:]
+                            st.session_state.conversation_description = conversation['description']
                             st.session_state.current_page = "conversation_page"
                             st.rerun()
+
+                st.subheader("Conversations:")
+
     except Exception as e:
         st.error(f"Error connecting to the chatbot service: {str(e)}")
 
@@ -164,7 +182,7 @@ def create_conversation():
     st.session_state.conversation_id = str(uuid.uuid4())
     try:
         response = requests.post(
-            f"http://localhost:8000/conversations/{st.session_state.chatbot_id}",
+            f"http://localhost:8000/conversations/{st.session_state.conversation_id}",
             json={
                 "user_id": st.session_state.user_id,
                 "conversation_id": st.session_state.conversation_id,
@@ -226,7 +244,7 @@ if 'access_token' in st.session_state and st.session_state.access_token and is_t
     elif st.session_state.current_page == "chatbot_page":
         st.title(f"VeeVee UI - Chatbot: {st.session_state.chatbot_name}")
         chatbot_page()
-    elif st.session_state.current_page == "connversation_page":
+    elif st.session_state.current_page == "conversation_page":
         st.title(f"VeeVee UI - Conversation: {st.session_state.conversation_id}")
         conversation_page()
 else:
