@@ -4,9 +4,9 @@ import requests
 import uuid
 from jose import jwt
 import pandas as pd
-import app.ui.chatbots as chatbots
-import app.ui.conversation as conversation
-import app.ui.landing as landing
+import app.ui.chatbots_ui as chatbots_ui
+import app.ui.conversation_ui as conversation_ui
+import app.ui.landing_ui as landing_ui
 
 
 # DECLARATIONS --------------------------------------------------------------------------------------------
@@ -78,13 +78,13 @@ initialize_session_state()
 if 'access_token' in st.session_state and st.session_state.access_token and is_token_valid():
     if st.session_state.current_page == "landing_page":
         st.title(f"VeeVee UI - Welcome, {st.session_state.username}!")
-        landing.landing_page()
+        landing_ui.landing_page()
     elif st.session_state.current_page == "chatbot_page":
         st.title(f"VeeVee UI - Chatbot: {st.session_state.chatbot_name}")
-        chatbots.chatbot_page()
+        chatbots_ui.chatbot_page()
     elif st.session_state.current_page == "conversation_page":
         st.title(f"VeeVee UI - Conversation: {st.session_state.conversation_id}")
-        conversation.conversation_page()
+        conversation_ui.conversation_page()
 else:
     st.title("VeeVee UI")
     st.warning("Warning: Refreshing the page will log you out!")

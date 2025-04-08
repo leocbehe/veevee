@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import uuid
 import datetime
-from .conversation import create_conversation
+from .conversation_ui import create_conversation
 
 def chatbot_page():
     h1, h2, h3 = st.columns([0.3, 0.4, 0.3])
