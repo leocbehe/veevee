@@ -76,6 +76,6 @@ class Message(Base):
     message_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     conversation_id = Column(UUID(as_uuid=True), ForeignKey("conversations.conversation_id"))
     message_text = Column(Text)
-    message_metadata = Column(JSONB, nullable=True)
+    role = Column(String)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     conversation = relationship("Conversation", back_populates="messages")

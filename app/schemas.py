@@ -71,18 +71,37 @@ class KnowledgeBaseDocument(KnowledgeBaseDocumentBase):
     class Config:
         from_attributes = True
 
+"""Message schemas"""
+
+class MessageBase(BaseModel):
+    message_text: str
+    role: str
+
+class MessageCreate(MessageBase):
+    message_id: Optional[uuid.UUID] = None
+    conversation_id: uuid.UUID
+    timestamp: datetime
+
+class Message(MessageBase):
+    conversation_id: uuid.UUID
+    message_id: uuid.UUID
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
 """Conversation schemas"""
 
 class ConversationBase(BaseModel):
-    pass
+    conversation_id: uuid.UUID
 
 class Conversation(ConversationBase):
     chatbot_id: uuid.UUID
     user_id: uuid.UUID
-    conversation_id: uuid.UUID
     description: Optional[str] = None
     start_time: datetime
     last_modified: Optional[datetime] = None
+    messages: List[Message] = []
 
     class Config:
         from_attributes = True
@@ -95,26 +114,10 @@ class ConversationCreate(ConversationBase):
     last_modified: Optional[datetime] = None
 
 class ConversationUpdate(ConversationBase):
-    pass
-
-"""Message schemas"""
-
-class MessageBase(BaseModel):
-    message_text: str
-    is_user_message: bool
-    retrieved_context: Optional[dict] = None
-
-class MessageCreate(MessageBase):
-    pass
-
-class Message(MessageBase):
-    message_id: uuid.UUID
-    conversation_id: uuid.UUID
-    sender_id: Optional[uuid.UUID] = None
-    timestamp: datetime
-
-    class Config:
-        from_attributes = True
+    description: Optional[str] = None
+    last_modified: Optional[datetime] = None
+    is_active: Optional[bool] = None
+    messages: Optional[List[MessageCreate]] = None
 
 """JWT and auth schemas"""
 

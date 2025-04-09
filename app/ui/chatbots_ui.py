@@ -20,6 +20,7 @@ def chatbot_page():
     st.write(f"**Chatbot Name:** {st.session_state.chatbot_name}")
     st.write(f"**Chatbot Description:** {st.session_state.chatbot_description}")
     st.write(f"**Chatbot Model Path:** {st.session_state.chatbot_model_path}")
+    st.subheader("Conversations:")
 
     # display all conversations for this chatbot 
     try:
@@ -50,12 +51,11 @@ def chatbot_page():
                         st.write(conversation['start_time'])
                     with c4:
                         if st.button("Select", key=conversation['conversation_id']):
-                            st.session_state.conversation_id = "..."+str(conversation['conversation_id'])[-8:]
+                            st.session_state.conversation_id = conversation['conversation_id']
                             st.session_state.conversation_description = conversation['description']
                             st.session_state.current_page = "conversation_page"
                             st.rerun()
 
-                st.subheader("Conversations:")
 
     except Exception as e:
         st.error(f"Error connecting to the chatbot service: {str(e)}")

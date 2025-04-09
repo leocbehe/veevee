@@ -58,17 +58,34 @@ def read_conversations_by_chatbot(chatbot_id: str, db: Session = Depends(databas
     return conversations
 
 
-@router.put("/{conversation_id}", response_model=schemas.Conversation)
-def update_conversation(conversation_id: str, conversation: schemas.ConversationUpdate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_user)):
+@router.put("/", response_model=schemas.Conversation)
+def update_conversation(conversation: schemas.ConversationUpdate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_user)):
     """
     Update a conversation.
     """
-    db_conversation = db.query(models.Conversation).filter(models.Conversation.conversation_id == conversation_id).first()
+    db_conversation = db.query(models.Conversation).filter(models.Conversation.conversation_id == conversation.conversation_id).first()
+    print(f"\n\nconversation dict: {conversation.model_dump()}")
+    print(f"\n\ndb_conversation dict: {db_conversation.__dict__}")
     if db_conversation is None:
         raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    messages = [schemas.MessageCreate(**message.model_dump()) for message in conversation.messages]
+    print(f"\n\nmessages: {messages}")
 
-    for key, value in conversation.model_dump(exclude_unset=True).items():
+    # Update the conversation object with all values except for messages
+    for key, value in conversation.model_dump(exclude_unset=True, exclude={"messages"}).items():
         setattr(db_conversation, key, value)
+
+    # update the Messages in the conversation by updating the Messages table in the database
+    for message in messages:
+        if message.message_id is None:
+            db_message = models.Message(**message.model_dump())
+            db.add(db_message)
+        else:
+            db_message = db.query(models.Message).filter(models.Message.message_id == message.message_id).first()
+            if db_message is None:
+                db_message = models.Message(**message.model_dump())
+                db.add(db_message)
 
     db.commit()
     db.refresh(db_conversation)
