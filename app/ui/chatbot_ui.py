@@ -12,7 +12,8 @@ def chatbot_page():
             st.rerun()
     with h2:
         if st.button("New Conversation"):
-            st.session_state.conversation_id = create_conversation()
+            create_conversation()
+            print(f"Conversation ID: {st.session_state.conversation_id}")
             st.session_state.current_page = "conversation_page"
             st.rerun()
     with h3:

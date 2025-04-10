@@ -4,7 +4,7 @@ import requests
 import uuid
 from jose import jwt
 import pandas as pd
-import app.ui.chatbots_ui as chatbots_ui
+import app.ui.chatbot_ui as chatbot_ui
 import app.ui.conversation_ui as conversation_ui
 import app.ui.landing_ui as landing_ui
 
@@ -83,7 +83,7 @@ if 'access_token' in st.session_state and st.session_state.access_token and is_t
         landing_ui.landing_page()
     elif st.session_state.current_page == "chatbot_page":
         st.title(f"VeeVee UI - Chatbot: {st.session_state.chatbot_name}")
-        chatbots_ui.chatbot_page()
+        chatbot_ui.chatbot_page()
     elif st.session_state.current_page == "conversation_page":
         st.title(f"VeeVee UI - Conversation: {st.session_state.conversation_id}")
         conversation_ui.conversation_page()

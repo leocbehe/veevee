@@ -12,9 +12,6 @@ def conversation_page():
     if st.session_state.conversation_description:
         st.sidebar.write(f"Topic: {st.session_state.conversation_description}")
     
-    # Main conversation dialogue box
-    st.title(f"Conversation with {st.session_state.chatbot_name}")
-    
     # Initialize conversation history in session state if not exists
     if 'conversation_messages' not in st.session_state:
         st.session_state.conversation_messages = []
@@ -34,7 +31,7 @@ def conversation_page():
     
     # Display conversation history
     for message in st.session_state.conversation_messages:
-        if message['sender'] == 'user':
+        if message['role'] == 'user':
             st.chat_message("user").write(message['message_text'])
         else:
             st.chat_message("assistant").write(message['message_text'])
@@ -69,8 +66,9 @@ def conversation_page():
 def create_conversation():
     st.session_state.conversation_id = str(uuid.uuid4())
     try:
+        print(f"Creating conversation with ID: {st.session_state.conversation_id}")
         response = requests.post(
-            f"http://localhost:8000/conversations/{st.session_state.conversation_id}",
+            f"http://localhost:8000/conversations/",
             json={
                 "user_id": st.session_state.user_id,
                 "conversation_id": st.session_state.conversation_id,

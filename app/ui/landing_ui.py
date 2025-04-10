@@ -1,6 +1,6 @@
 import streamlit as st
 import requests
-from .chatbots_ui import create_chatbot
+from .chatbot_ui import create_chatbot
 
 def landing_page():
 
