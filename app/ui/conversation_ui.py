@@ -44,6 +44,8 @@ def conversation_page():
         st.session_state.conversation_messages.append({
             "role": "user", 
             "message_text": user_input,
+            "conversation_id": st.session_state.conversation_id,
+            "timestamp": datetime.datetime.now().isoformat()
         })
         
         # TODO: Implement actual API call to get chatbot response
@@ -54,6 +56,8 @@ def conversation_page():
         st.session_state.conversation_messages.append({
             "role": "assistant", 
             "message_text": chatbot_response,
+            "conversation_id": st.session_state.conversation_id,
+            "timestamp": datetime.datetime.now().isoformat()
         })
 
         # update messages on the backend
@@ -90,14 +94,14 @@ def create_conversation():
     return st.session_state.conversation_id
 
 def update_messages_backend(conversation_id, messages):
-    print("Updating messages...")
     pprint.pprint(messages)
     try:
         response = requests.put(
             f"http://localhost:8000/conversations/",
             json={
                 "conversation_id": conversation_id,
-                "messages": messages
+                "messages": messages,
+                "last_modified": datetime.datetime.now().isoformat()
             },
             headers={"Authorization": f"Bearer {st.session_state.access_token}"}
         )

@@ -64,8 +64,6 @@ def update_conversation(conversation: schemas.ConversationUpdate, db: Session = 
     Update a conversation.
     """
     db_conversation = db.query(models.Conversation).filter(models.Conversation.conversation_id == conversation.conversation_id).first()
-    print(f"\n\nconversation dict: {conversation.model_dump()}")
-    print(f"\n\ndb_conversation dict: {db_conversation.__dict__}")
     if db_conversation is None:
         raise HTTPException(status_code=404, detail="Conversation not found")
     
