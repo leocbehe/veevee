@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int
     domains: Set[str] = set()
     hf_token: str
+    default_hf_model: str
 
     model_config: SettingsConfigDict = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

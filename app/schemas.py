@@ -119,6 +119,9 @@ class ConversationUpdate(ConversationBase):
     is_active: Optional[bool] = None
     messages: Optional[List[MessageCreate]] = None
 
+class ConversationDeletionConfirmation(ConversationBase):
+    pass
+
 """JWT and auth schemas"""
 
 class TokenData(BaseModel):

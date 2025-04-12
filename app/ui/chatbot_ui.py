@@ -1,23 +1,26 @@
 import streamlit as st
 import requests
 import uuid
+import pprint
 import datetime
 from .conversation_ui import create_conversation
 
 def chatbot_page():
-    h1, h2, h3 = st.columns([0.3, 0.4, 0.3])
+    h1, h2, h3 = st.columns([0.3, 0.3, 0.4])
     with h1:
         if st.button("Back to Landing Page"):
             st.session_state.current_page = "landing_page"
             st.rerun()
     with h2:
         if st.button("New Conversation"):
+            st.session_state.conversation_description = st.session_state.new_conv_desc
             create_conversation()
             print(f"Conversation ID: {st.session_state.conversation_id}")
             st.session_state.current_page = "conversation_page"
             st.rerun()
     with h3:
-        pass
+        st.session_state.new_conv_desc = st.text_input("Conversation Description", key="new_conversation_description")
+        
     st.write(f"**Chatbot Name:** {st.session_state.chatbot_name}")
     st.write(f"**Chatbot Description:** {st.session_state.chatbot_description}")
     st.write(f"**Chatbot Model Path:** {st.session_state.chatbot_model_path}")
@@ -33,7 +36,7 @@ def chatbot_page():
         if response.status_code == 200:
             conversations = response.json()
             if conversations:
-                a1,a2,a3,a4 = st.columns([0.25, 0.25, 0.25, 0.25], border=True)
+                a1,a2,a3,a4,a5 = st.columns([0.2, 0.2, 0.2, 0.2, 0.2], border=True)
                 with a1:
                     st.write("Conversation ID")
                 with a2:
@@ -42,8 +45,10 @@ def chatbot_page():
                     st.write("Start Time")
                 with a4:
                     st.write("Select")
+                with a5:
+                    st.write("Delete")
                 for conversation in conversations:
-                    c1,c2,c3,c4 = st.columns([0.25, 0.25, 0.25, 0.25], border=True)
+                    c1,c2,c3,c4,c5 = st.columns([0.2, 0.2, 0.2, 0.2, 0.2], border=True)
                     with c1:
                         st.write("..."+str(conversation['conversation_id'])[-8:])
                     with c2:
@@ -51,15 +56,30 @@ def chatbot_page():
                     with c3:
                         st.write(conversation['start_time'])
                     with c4:
-                        if st.button("Select", key=conversation['conversation_id']):
+                        if st.button("Select", key=f"select_{conversation['conversation_id']}"):
                             st.session_state.conversation_id = conversation['conversation_id']
                             st.session_state.conversation_description = conversation['description']
                             st.session_state.current_page = "conversation_page"
+                            st.rerun()
+                    with c5:
+                        if st.button("Delete", key=f"delete_{conversation['conversation_id']}"):
+                            print(f"delete command: http://localhost:8000/conversations/{conversation['conversation_id']}"),
+                            response = requests.delete(
+                                f"http://localhost:8000/conversations/{conversation['conversation_id']}",
+                                headers={"Authorization": f"Bearer {st.session_state.access_token}"}
+                            )
+                            if response.status_code == 200:
+                                st.success(f"Conversation {conversation['conversation_id']} deleted successfully.")
+                            else:
+                                st.write(f"Error deleting conversation {conversation['conversation_id']}: {response.status_code}")
+                                st.write(response.status_code)
                             st.rerun()
 
 
     except Exception as e:
         st.error(f"Error connecting to the chatbot service: {str(e)}")
+        print("session state:")
+        pprint.pprint(st.session_state)
 
 def create_chatbot():
     try:

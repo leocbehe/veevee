@@ -38,6 +38,10 @@ def initialize_session_state():
         st.session_state.conversation_id = None
     if "conversation_description" not in st.session_state:
         st.session_state.conversation_description = None
+    if "new_conversation_description" not in st.session_state:
+        st.session_state.new_conversation_description = None
+    if "conversation_description_input" not in st.session_state:
+        st.session_state.conversation_description_input = None
     if "conversation_messages" not in st.session_state:
         st.session_state.conversation_messages = []
     if "current_page" not in st.session_state:

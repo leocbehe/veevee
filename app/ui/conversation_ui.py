@@ -3,6 +3,9 @@ import requests
 import datetime
 import uuid
 import pprint
+from typing import List
+from ..llm import LLMService
+from ..config import settings
 
 def conversation_page():
     if st.sidebar.button("Back to Chatbot Page"):
@@ -50,7 +53,7 @@ def conversation_page():
         
         # TODO: Implement actual API call to get chatbot response
         # For now, using a placeholder response
-        chatbot_response = f"Response to: {user_input}"
+        chatbot_response = generate_response(user_input, st.session_state.conversation_messages)
         
         # Add chatbot response to conversation history
         st.session_state.conversation_messages.append({
@@ -65,7 +68,12 @@ def conversation_page():
         
         # Rerun to refresh the page and show new messages
         st.rerun()
-    
+
+def generate_response(user_input, conversation_history: List = []):
+    # Initialize the LLM service
+    service = LLMService(settings.default_hf_model)
+    return "This is a placeholder response."
+
 
 def create_conversation():
     st.session_state.conversation_id = str(uuid.uuid4())
@@ -77,7 +85,7 @@ def create_conversation():
                 "user_id": st.session_state.user_id,
                 "conversation_id": st.session_state.conversation_id,
                 "chatbot_id": st.session_state.chatbot_id,
-                "description": st.session_state.conversation_description_input,
+                "description": st.session_state.new_conversation_description if st.session_state.new_conversation_description else "New Conversation",
                 "start_time": datetime.datetime.now().isoformat(),
                 "last_modified": datetime.datetime.now().isoformat(),
                 "is_active": True
@@ -88,6 +96,8 @@ def create_conversation():
             st.success("Conversation created successfully!")
         else:
             st.error(f"Failed to create conversation: {response.status_code} - {response.message_text}")
+            print(f"Failed to create conversation: {response.status_code} - {response.message_text}")
+            pprint.pprint(st.session_state)
     except Exception as e:
         st.error(f"Error connecting to the chatbot service: {str(e)}")
         return None

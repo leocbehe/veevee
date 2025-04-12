@@ -90,14 +90,15 @@ def update_conversation(conversation: schemas.ConversationUpdate, db: Session = 
     return db_conversation
 
 
-@router.delete("/{conversation_id}", response_model=schemas.Conversation)
+@router.delete("/{conversation_id}", response_model=schemas.ConversationDeletionConfirmation)
 def delete_conversation(conversation_id: str, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_user)):
     """
     Delete a conversation.
     """
     conversation = db.query(models.Conversation).filter(models.Conversation.conversation_id == conversation_id).first()
+    deleted_conversation_id = conversation.conversation_id
     if conversation is None:
         raise HTTPException(status_code=404, detail="Conversation not found")
     db.delete(conversation)
     db.commit()
-    return conversation
+    return schemas.ConversationDeletionConfirmation(conversation_id=conversation.conversation_id)
