@@ -6,21 +6,48 @@ import datetime
 from .conversation_ui import create_conversation
 
 def chatbot_page():
+    # Initialize session state variables
+    if "show_conversation_form" not in st.session_state:
+        st.session_state.show_conversation_form = False
+    if "new_conv_desc" not in st.session_state:
+        st.session_state.new_conv_desc = ""
+
+    def open_conversation_form():
+        st.session_state.show_conversation_form = True
+
+    def close_conversation_form():
+        st.session_state.show_conversation_form = False
+
+    def create_new_conversation():
+        st.session_state.conversation_description = st.session_state.new_conv_desc
+        create_conversation()
+        print(f"Conversation ID: {st.session_state.conversation_id}")
+        st.session_state.current_page = "conversation_page"
+        close_conversation_form()
+
     h1, h2, h3 = st.columns([0.3, 0.3, 0.4])
     with h1:
         if st.button("Back to Landing Page"):
             st.session_state.current_page = "landing_page"
             st.rerun()
     with h2:
-        if st.button("New Conversation"):
-            st.session_state.conversation_description = st.session_state.new_conv_desc
-            create_conversation()
-            print(f"Conversation ID: {st.session_state.conversation_id}")
-            st.session_state.current_page = "conversation_page"
-            st.rerun()
+        st.button("New Conversation", on_click=open_conversation_form)
+
+    # Conversation form (modal)
+    if st.session_state.show_conversation_form:
+        with st.sidebar.container():
+            st.sidebar.subheader("Create New Conversation")
+            st.session_state.new_conv_desc = st.sidebar.text_input("New Conversation Description", key="new_conversation_description", value=st.session_state.new_conv_desc)
+
+            col1, col2 = st.sidebar.columns(2)
+            with col1:
+                if st.sidebar.button("Save", on_click=create_new_conversation):
+                    pass
+            with col2:
+                st.sidebar.button("Cancel", on_click=close_conversation_form)
     with h3:
-        st.session_state.new_conv_desc = st.text_input("New Conversation Description", key="new_conversation_description")
-        
+        pass
+
     st.write(f"**Chatbot Name:** {st.session_state.chatbot_name}")
     st.write(f"**Chatbot Description:** {st.session_state.chatbot_description}")
     st.write(f"**Chatbot Model Path:** {st.session_state.chatbot_model_path}")
