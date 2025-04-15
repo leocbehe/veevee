@@ -12,7 +12,8 @@ router = APIRouter(
 
 @router.get("/", response_model=List[schemas.Chatbot])
 def get_chatbots(limit: int = 10, offset: int = 0, db = Depends(get_db), current_user=Depends(oauth2_scheme)):
-    return db.query(models.Chatbot).offset(offset).limit(limit).all()
+    chatbots = db.query(models.Chatbot).offset(offset).limit(limit).all()
+    return chatbots
 
 @router.get("/{chatbot_id}", response_model=schemas.Chatbot)
 def get_chatbot(chatbot_id: int, db = Depends(get_db), current_user=Depends(oauth2_scheme)):
@@ -22,8 +23,7 @@ def get_chatbot(chatbot_id: int, db = Depends(get_db), current_user=Depends(oaut
     return chatbot
 
 @router.post("/", response_model=schemas.Chatbot)
-def create_chatbot(chatbot: schemas.Chatbot, db = Depends(get_db), current_user=Depends(oauth2_scheme)):
-    print("Creating chatbot...")
+def create_chatbot(chatbot: schemas.ChatbotCreate, db = Depends(get_db), current_user=Depends(oauth2_scheme)):
     new_chatbot = models.Chatbot(**chatbot.model_dump())
     db.add(new_chatbot)
     db.commit()

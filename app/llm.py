@@ -25,7 +25,7 @@ class LLMService:
             self.model_name = model_name if model_name else settings.default_hf_model
             self.client = InferenceClient(provider=inference_provider, model=self.model_name, token=self.token)
 
-    def generate(self, prompt, max_length: int = 400, temperature: float = 0.7, top_p: float = 0.9) -> str:
+    def generate(self, prompt, max_length: int = 800, temperature: float = 0.7, top_p: float = 0.9) -> str:
         """
         Generates a response from the LLM based on the given prompt.
 

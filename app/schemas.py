@@ -36,16 +36,18 @@ class User(UserBase):
 
 class ChatbotBase(BaseModel):
     chatbot_name: str
-    description: Optional[str] = None
-    modelfile: Optional[str] = None
-    configuration: Optional[dict] = None
-    model_path: Optional[str] = None
+    description: str
+    model_path: str
 
 class Chatbot(ChatbotBase):
     chatbot_id: uuid.UUID
     owner_id: uuid.UUID
     created_at: datetime
     is_active: bool
+
+class ChatbotCreate(ChatbotBase):
+    owner_id: uuid.UUID
+    configuration: Optional[dict] = None
 
     class Config:
         from_attributes = True
