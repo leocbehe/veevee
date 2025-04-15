@@ -3,6 +3,7 @@ import requests
 import datetime
 import uuid
 import pprint
+from huggingface_hub import ChatCompletionOutput
 from typing import List
 from ..llm import LLMService
 from ..config import settings
@@ -51,14 +52,18 @@ def conversation_page():
             "timestamp": datetime.datetime.now().isoformat()
         })
         
-        # TODO: Implement actual API call to get chatbot response
-        # For now, using a placeholder response
-        chatbot_response = generate_response(user_input, st.session_state.conversation_messages)
+        # Generate chatbot response
+        print(f"Generating response for user input: {user_input}")
+        response_text = generate_response(st.session_state.conversation_messages)
+
+        if not response_text:
+            st.error("Failed to generate response from the chatbot.")
+            return None
         
         # Add chatbot response to conversation history
         st.session_state.conversation_messages.append({
             "role": "assistant", 
-            "message_text": chatbot_response,
+            "message_text": response_text,
             "conversation_id": st.session_state.conversation_id,
             "timestamp": datetime.datetime.now().isoformat()
         })
@@ -69,10 +74,20 @@ def conversation_page():
         # Rerun to refresh the page and show new messages
         st.rerun()
 
-def generate_response(user_input, conversation_history: List = []):
-    # Initialize the LLM service
-    service = LLMService(settings.default_hf_model)
-    return "This is a placeholder response."
+def generate_response(conversation_history):
+    # Initialize the LLM service    
+    service = LLMService(inference_provider="ollama")
+    # huggingface is expecting a list with only "role" and "content" keys, so we need to remove the "conversation_id" and "timestamp" keys
+    formatted_conversation_history = [
+        {
+            "role": message["role"],
+            "content": message["message_text"]
+        }
+        for message in conversation_history
+    ]
+    response = service.generate(formatted_conversation_history)
+    response_text = response.choices[0].message.content if service.inference_provider == "huggingface" else response.message.content
+    return response_text
 
 
 def create_conversation():

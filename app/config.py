@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     domains: Set[str] = set()
     hf_token: str
     default_hf_model: str
+    inference_provider: str
+    default_ollama_model: str
 
     model_config: SettingsConfigDict = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

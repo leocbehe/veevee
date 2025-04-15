@@ -19,7 +19,7 @@ def chatbot_page():
             st.session_state.current_page = "conversation_page"
             st.rerun()
     with h3:
-        st.session_state.new_conv_desc = st.text_input("Conversation Description", key="new_conversation_description")
+        st.session_state.new_conv_desc = st.text_input("New Conversation Description", key="new_conversation_description")
         
     st.write(f"**Chatbot Name:** {st.session_state.chatbot_name}")
     st.write(f"**Chatbot Description:** {st.session_state.chatbot_description}")
