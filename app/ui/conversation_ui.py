@@ -85,9 +85,28 @@ def generate_response(conversation_history):
         }
         for message in conversation_history
     ]
-    response = service.generate(formatted_conversation_history)
-    response_text = response.choices[0].message.content if service.inference_provider == "huggingface" else response.message.content
-    return response_text
+
+    response_generator = service.generate(formatted_conversation_history, stream=True)
+
+    full_response = ""
+    response_placeholder = st.empty() 
+
+    if service.inference_provider == "ollama":
+        for chunk in response_generator:
+            full_response += chunk.message.content
+            response_placeholder.markdown(full_response + "▌")  # Display the updated response with a cursor
+        response_placeholder.markdown(full_response)  # Final response without cursor
+        return full_response
+    else:
+        for chunk in response_generator:
+            full_response += chunk.choices[0].delta.content if chunk.choices[0].delta.content else ""
+            response_placeholder.markdown(full_response + "▌")  # Display the updated response with a cursor
+        response_placeholder.markdown(full_response)  # Final response without cursor
+        return full_response
+
+
+    # response_text = response.choices[0].message.content if service.inference_provider == "huggingface" else response.message.content
+    # return response_text
 
 
 def create_conversation():
@@ -130,9 +149,7 @@ def update_messages_backend(conversation_id, messages):
             },
             headers={"Authorization": f"Bearer {st.session_state.access_token}"}
         )
-        if response.status_code == 200:
-            st.success("Messages updated successfully!")
-        else:
+        if not response.status_code == 200:
             st.error(f"Failed to update messages: {response.status_code} - {response.message_text}")
     except Exception as e:
         st.error(f"Error connecting to the chatbot service: {str(e)}")
