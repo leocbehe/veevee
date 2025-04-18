@@ -47,6 +47,7 @@ class Chatbot(ChatbotBase):
 
 class ChatbotCreate(ChatbotBase):
     owner_id: uuid.UUID
+    created_at: datetime
     configuration: Optional[dict] = None
 
     class Config:

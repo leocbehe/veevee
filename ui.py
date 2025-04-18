@@ -18,34 +18,34 @@ def is_token_valid():
     return datetime.datetime.now().timestamp() < st.session_state.token_expiry
 
 def initialize_session_state():
-    if "access_token" not in st.session_state:
-        st.session_state.access_token = None
-    if "token_expiry" not in st.session_state:
-        st.session_state.token_expiry = None
-    if "username" not in st.session_state:
-        st.session_state.username = None
-    if "user_id" not in st.session_state:
-        st.session_state.user_id = None
-    if "chatbot_id" not in st.session_state:
-        st.session_state.chatbot_id = None
-    if "chatbot_name" not in st.session_state:
-        st.session_state.chatbot_name = None
-    if "chatbot_description" not in st.session_state:
-        st.session_state.chatbot_description = None
-    if "chatbot_model_path" not in st.session_state:
-        st.session_state.chatbot_model_path = None
-    if "conversation_id" not in st.session_state:
-        st.session_state.conversation_id = None
-    if "conversation_description" not in st.session_state:
-        st.session_state.conversation_description = None
-    if "new_conversation_description" not in st.session_state:
-        st.session_state.new_conversation_description = None
-    if "conversation_description_input" not in st.session_state:
-        st.session_state.conversation_description_input = None
-    if "conversation_messages" not in st.session_state:
-        st.session_state.conversation_messages = []
+    keys = [
+        "access_token",
+        "token_expiry",
+        "username",
+        "user_id",
+        "chatbot_id",
+        "chatbot_name",
+        "chatbot_description",
+        "chatbot_model_path",
+        "conversation_id",
+        "conversation_description",
+        "new_conversation_description"
+    ]
+    for key in keys:
+        if key not in st.session_state:
+            st.session_state[key] = None
+
     if "current_page" not in st.session_state:
         st.session_state.current_page = "landing_page"
+
+    if "conversation_messages" not in st.session_state:
+        st.session_state.conversation_messages = []
+
+    if "chatbot_config" not in st.session_state:
+        st.session_state.chatbot_config = {}
+
+    if "new_chatbot_config" not in st.session_state:
+        st.session_state.new_chatbot_config = {}
 
 def login():
     try:
@@ -82,17 +82,15 @@ initialize_session_state()
 # CONDITIONAL RENDERING --------------------------------------------------------------------------------------------
 
 if 'access_token' in st.session_state and st.session_state.access_token and is_token_valid():
+    st.markdown("<h1 style='text-align: center;'>VeeVee UI</h1>", unsafe_allow_html=True)
     if st.session_state.current_page == "landing_page":
-        st.title(f"VeeVee UI - Welcome, {st.session_state.username}!")
         landing_ui.landing_page()
     elif st.session_state.current_page == "chatbot_page":
-        st.title(f"VeeVee UI - Chatbot: {st.session_state.chatbot_name}")
         chatbot_ui.chatbot_page()
     elif st.session_state.current_page == "conversation_page":
-        st.title(f"VeeVee UI - Conversation: {st.session_state.conversation_id}")
         conversation_ui.conversation_page()
 else:
-    st.title("VeeVee UI")
+    st.markdown("<h1 style='text-align: center;'>VeeVee UI</h1>", unsafe_allow_html=True)
     st.warning("Warning: Refreshing the page will log you out!")
 
     with st.form("login_form"):

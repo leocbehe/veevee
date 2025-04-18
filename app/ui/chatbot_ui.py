@@ -107,25 +107,3 @@ def chatbot_page():
         st.error(f"Error connecting to the chatbot service: {str(e)}")
         print("session state:")
         pprint.pprint(st.session_state)
-
-def create_chatbot():
-    try:
-        response = requests.post(
-            "http://localhost:8000/chatbots/",
-            json={
-                "chatbot_id": str(uuid.uuid4()),
-                "owner_id": st.session_state.user_id,
-                "chatbot_name": st.session_state.chatbot_name_input,
-                "description": st.session_state.chatbot_description_input,
-                "model_path": st.session_state.chatbot_model_path_input,
-                "created_at": datetime.datetime.now().isoformat(),
-                "is_active": True
-            },
-            headers={"Authorization": f"Bearer {st.session_state.access_token}"}
-        )
-        if response.status_code == 200:
-            st.success("Chatbot created successfully!")
-        else:
-            st.error(f"Failed to create chatbot: {response.status_code} - {response.text}")
-    except Exception as e:
-        st.error(f"Error connecting to the chatbot service: {str(e)}")

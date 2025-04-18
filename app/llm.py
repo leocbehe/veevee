@@ -51,8 +51,6 @@ class LLMService:
                         "num_predict": max_length,
                     }
                 )
-                print(f"Response class: {type(response)}")
-                print(f"Response: {response}")
                 return response
             except Exception as e:
                 print(f"Error generating response: {e}")

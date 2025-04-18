@@ -1,16 +1,17 @@
 import streamlit as st
 import requests
+from  datetime import datetime
 
 def landing_page():
     # Initialize session state variables
     if "show_chatbot_form" not in st.session_state:
         st.session_state.show_chatbot_form = False
-    if "chatbot_name_input" not in st.session_state:
-        st.session_state.chatbot_name_input = ""
-    if "chatbot_description_input" not in st.session_state:
-        st.session_state.chatbot_description_input = ""
-    if "chatbot_model_path_input" not in st.session_state:
-        st.session_state.chatbot_model_path_input = ""
+    if "new_chatbot_name" not in st.session_state:
+        st.session_state.new_chatbot_name = ""
+    if "new_chatbot_description" not in st.session_state:
+        st.session_state.new_chatbot_description = ""
+    if "new_chatbot_model_path" not in st.session_state:
+        st.session_state.new_chatbot_model_path = ""
 
     def open_chatbot_form():
         st.session_state.show_chatbot_form = True
@@ -20,13 +21,17 @@ def landing_page():
 
     def create_chatbot():
         try:
+            print(f"Creating chatbot with name: {st.session_state.new_chatbot_name}")
+            print(f"datetime: {datetime.now().isoformat()}")
             response = requests.post(
                 "http://localhost:8000/chatbots/",
                 json={
-                    "chatbot_name": st.session_state.chatbot_name_input,
-                    "description": st.session_state.chatbot_description_input,
-                    "model_path": st.session_state.chatbot_model_path_input,
-                    "owner_id": st.session_state.user_id,
+                    "chatbot_name": st.session_state.new_chatbot_name,
+                    "description": st.session_state.new_chatbot_description,
+                    "model_path": st.session_state.new_chatbot_model_path,
+                    "configuration": st.session_state.new_chatbot_config,
+                    "created_at": datetime.now().isoformat(),
+                    "owner_id": st.session_state.user_id
                 },
                 headers={"Authorization": f"Bearer {st.session_state.access_token}"},
             )
@@ -38,7 +43,6 @@ def landing_page():
             st.error(f"Error connecting to the chatbot service: {str(e)}")
         finally:
             close_chatbot_form()
-            st.rerun()
 
     # Button to open the chatbot form, placed above "Your Chatbots"
     st.button("Create Chatbot", on_click=open_chatbot_form)
@@ -47,16 +51,20 @@ def landing_page():
 
     # Chatbot form (modal)
     if st.session_state.show_chatbot_form:
+        for k in ["stream", "temperature", "inference_provider"]:
+            st.session_state.new_chatbot_config[k] = None
         with st.sidebar.container():
-            st.sidebar.subheader("Create New Chatbot")
-            st.session_state.chatbot_name_input = st.sidebar.text_input("Chatbot Name:", value=st.session_state.chatbot_name_input)
-            st.session_state.chatbot_description_input = st.sidebar.text_input("Chatbot Description:", value=st.session_state.chatbot_description_input)
-            st.session_state.chatbot_model_path_input = st.sidebar.text_input("Chatbot Model Path:", value=st.session_state.chatbot_model_path_input)
+            st.sidebar.header("Create New Chatbot")
+            st.session_state.new_chatbot_name = st.sidebar.text_input("Chatbot Name:", value=st.session_state.new_chatbot_name)
+            st.session_state.new_chatbot_description = st.sidebar.text_input("Chatbot Description:", value=st.session_state.new_chatbot_description)
+            st.session_state.new_chatbot_model_path = st.sidebar.text_input("Chatbot Model Path:", value=st.session_state.new_chatbot_model_path)
+            st.session_state.new_chatbot_config["stream"] = st.sidebar.checkbox("Stream Responses", value=st.session_state.new_chatbot_config["stream"])
+            st.session_state.new_chatbot_config["temperature"] = st.sidebar.slider("Temperature", min_value=0.0, max_value=1.0, value=st.session_state.new_chatbot_config["temperature"], step=0.1)
+            st.session_state.new_chatbot_config["inference_provider"] = st.sidebar.selectbox("Inference Provider", ["ollama", "huggingface"], index=st.session_state.new_chatbot_config["inference_provider"])
 
             col1, col2 = st.sidebar.columns(2)
             with col1:
-                if st.sidebar.button("Save", on_click=create_chatbot):
-                    pass
+                st.sidebar.button("Save", on_click=create_chatbot)
             with col2:
                 st.sidebar.button("Cancel", on_click=close_chatbot_form)
 
