@@ -1,9 +1,7 @@
 import streamlit as st
 import datetime
 import requests
-import uuid
 from jose import jwt
-import pandas as pd
 import app.ui.chatbot_ui as chatbot_ui
 import app.ui.conversation_ui as conversation_ui
 import app.ui.landing_ui as landing_ui
@@ -75,6 +73,25 @@ def login():
     except Exception as e:
         st.error(f"Error connecting to authentication service: {str(e)}")
 
+def create_user():
+    try:
+        response = requests.post(
+            "http://localhost:8000/users/",
+            json={
+                "username": username,
+                "password": password,
+            },
+            headers={"Content-Type": "application/json"}
+        )
+        print(f"response: {response}")
+        if response.status_code == 200:
+            print("User created successfully! Logging you in...")
+            login()
+        else:
+            st.error(f"Failed to create user: {response.status_code} - {response.text}")
+    except Exception as e:
+        st.error(f"Error connecting to user creation service: {str(e)}")
+
 # RUNS AT START --------------------------------------------------------------------------------------------
 
 initialize_session_state()
@@ -96,6 +113,13 @@ else:
     with st.form("login_form"):
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
-        submit_button = st.form_submit_button("Login")
-        if submit_button:
-            login()
+        button1, button2, _ = st.columns([0.12, 0.18, 0.7], border=False)
+        with button1:
+            submit_button = st.form_submit_button("Login")
+            if submit_button:
+                login()
+        with button2:
+            create_user_button = st.form_submit_button("Create User")
+            if create_user_button:
+                create_user()
+        

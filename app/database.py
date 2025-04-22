@@ -38,9 +38,9 @@ def authenticate_user(db: Session, username, password):
 
 # User-related database functions
 def create_user(db: Session, user):
-    db_user = db.query(models.User).filter(models.User.email == user.email).first()
+    db_user = db.query(models.User).filter(models.User.username == user.username).first()
     if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=400, detail="Username already exists!")
     db_user = models.User(**user.model_dump())
     db_user = dependencies.hash_user_password(db_user)
     db.add(db_user)
