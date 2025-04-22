@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
+import uuid
 from .. import schemas, models
 from ..dependencies import oauth2_scheme
 from ..database import get_db
@@ -16,8 +17,8 @@ def get_chatbots(limit: int = 10, offset: int = 0, db = Depends(get_db), current
     return chatbots
 
 @router.get("/{chatbot_id}", response_model=schemas.Chatbot)
-def get_chatbot(chatbot_id: int, db = Depends(get_db), current_user=Depends(oauth2_scheme)):
-    chatbot = db.query(models.Chatbot).filter(schemas.Chatbot.id == chatbot_id).first()
+def get_chatbot(chatbot_id, db = Depends(get_db), current_user=Depends(oauth2_scheme)):
+    chatbot = db.query(models.Chatbot).filter(models.Chatbot.chatbot_id == chatbot_id).first()
     if not chatbot:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chatbot not found")
     return chatbot
@@ -33,12 +34,23 @@ def create_chatbot(chatbot: schemas.ChatbotCreate, db = Depends(get_db), current
     return new_chatbot
 
 @router.patch("/{chatbot_id}", response_model=schemas.Chatbot)
-def update_chatbot(chatbot_id: int, chatbot: schemas.ChatbotUpdate, db = Depends(get_db), current_user=Depends(oauth2_scheme)):
-    db_chatbot = db.query(models.Chatbot).filter(schemas.Chatbot.id == chatbot_id).first()
+def update_chatbot(chatbot_id, chatbot: schemas.ChatbotUpdate, db = Depends(get_db), current_user=Depends(oauth2_scheme)):
+    db_chatbot = db.query(models.Chatbot).filter(models.Chatbot.chatbot_id == chatbot_id).first()
     if not db_chatbot:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chatbot not found")
     for key, value in chatbot.model_dump(exclude_unset=True).items():
         setattr(db_chatbot, key, value)
     db.commit()
     db.refresh(db_chatbot)
+    return db_chatbot
+
+@router.delete("/{chatbot_id}", response_model=schemas.Chatbot)
+def delete_chatbot(chatbot_id, db = Depends(get_db), current_user=Depends(oauth2_scheme)):
+    print(f"chatbot schema: {schemas.Chatbot.model_fields}")
+    print(f"chatbot_id: {chatbot_id}")
+    db_chatbot = db.query(models.Chatbot).filter(models.Chatbot.chatbot_id == chatbot_id).first()
+    if not db_chatbot:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chatbot not found")
+    db.delete(db_chatbot)
+    db.commit()
     return db_chatbot

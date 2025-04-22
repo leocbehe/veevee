@@ -105,10 +105,6 @@ def generate_response(conversation_history):
         return full_response
 
 
-    # response_text = response.choices[0].message.content if service.inference_provider == "huggingface" else response.message.content
-    # return response_text
-
-
 def create_conversation():
     st.session_state.conversation_id = str(uuid.uuid4())
     try:

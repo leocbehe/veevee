@@ -11,9 +11,21 @@ class LLMService:
 
     # Load environment variables from .env file
 
-    def __init__(self, model_name: str = None, token: Optional[str] = None, inference_provider: str = settings.inference_provider, inference_url: Optional[str] = "http://127.0.0.1:11434"):
+    def __init__(self, 
+                 model_name: str = None, 
+                 token: Optional[str] = None, 
+                 inference_provider: str = settings.inference_provider, 
+                 inference_url: Optional[str] = "http://127.0.0.1:11434",
+                 stream: bool = True,
+                 temperature: float = 0.7,
+                 max_length: int = 2000,
+                 top_p: float = 0.9):
         self.inference_provider = inference_provider if inference_provider else "huggingface"
         self.token = token if token else settings.hf_token
+        self.stream = stream
+        self.temperature = temperature
+        self.max_length = max_length
+        self.top_p = top_p
         if not token:
             print("""WARNING: no token provided. This may cause an error when attempting to 
                   run inference from a remote or third-party provider.""", file=sys.stderr)
@@ -25,7 +37,7 @@ class LLMService:
             self.model_name = model_name if model_name else settings.default_hf_model
             self.client = InferenceClient(provider=inference_provider, model=self.model_name, token=self.token)
 
-    def generate(self, prompt, max_length: int = 1200, temperature: float = 0.7, top_p: float = 0.9, stream: bool = True):
+    def generate(self, prompt):
         """
         Generates a response from the LLM based on the given prompt.
 
@@ -44,11 +56,11 @@ class LLMService:
                 response = self.client.chat(
                     model=self.model_name,
                     messages=prompt, 
-                    stream=stream,
+                    stream=self.stream,
                     options={
-                        "temperature": temperature,
-                        "top_p": top_p,
-                        "num_predict": max_length,
+                        "temperature": self.temperature,
+                        "top_p": self.top_p,
+                        "num_predict": self.max_length,
                     }
                 )
                 return response
@@ -59,10 +71,10 @@ class LLMService:
             try:
                 response = self.client.chat_completion(
                     messages=prompt,
-                    max_tokens=max_length,
-                    temperature=temperature,
-                    stream=stream,
-                    top_p=top_p
+                    max_tokens=self.max_length,
+                    temperature=self.temperature,
+                    stream=self.stream,
+                    top_p=self.top_p
                 )   
                 return response
             except Exception as e:

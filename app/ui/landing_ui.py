@@ -78,7 +78,8 @@ def landing_page():
             chatbots = response.json()
             if chatbots:
                 for chatbot in chatbots:
-                    col1, col2 = st.columns([0.8, 0.2])
+                    st.markdown("<hr style='margin-top: 0.5em;'>", unsafe_allow_html=True)
+                    col1, col2, col3 = st.columns([0.6, 0.2, 0.2])
                     with col1:
                         st.write(f"- {chatbot['chatbot_name']}")
                     with col2:
@@ -87,8 +88,24 @@ def landing_page():
                             st.session_state.chatbot_name = chatbot['chatbot_name']
                             st.session_state.chatbot_description = chatbot['description']
                             st.session_state.chatbot_model_path = chatbot['model_path']
+                            if 'configuration' in chatbot:
+                                st.session_state.chatbot_config = chatbot['configuration']
+                            else:
+                                st.session_state.chatbot_config = {}
                             st.session_state.current_page = "chatbot_page"
                             st.rerun()
+                    with col3:
+                        if st.button(f"Delete {chatbot['chatbot_name']}", key=f"delete_{chatbot['chatbot_id']}"):
+                            response = requests.delete(
+                                f"http://localhost:8000/chatbots/{chatbot['chatbot_id']}",
+                                headers={"Authorization": f"Bearer {st.session_state.access_token}"}
+                            )
+                            if response.status_code == 200:
+                                st.success(f"Chatbot '{chatbot['chatbot_name']}' deleted successfully!")
+                                st.rerun()
+                            else:
+                                st.error(f"Failed to delete chatbot: {response.status_code} - {response.text}")
+                st.markdown("<hr style='margin-top: 0.5em;'>", unsafe_allow_html=True)
             else:
                 st.write("There's nobody here...")
         else:

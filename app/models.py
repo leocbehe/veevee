@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, MetaData
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.orm import relationship
@@ -7,6 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 import uuid
 
 Base = declarative_base()
+metadata = Base.metadata
 
 class User(Base):
     __tablename__ = "users"
@@ -44,13 +45,13 @@ class Chatbot(Base):
 class KnowledgeBaseDocument(Base):
     __tablename__ = "knowledgebasedocuments"
 
-    document_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    document_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
     chatbot_id = Column(UUID(as_uuid=True), ForeignKey("chatbots.chatbot_id"))
     file_name = Column(String)
     file_path = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    document_metadata = Column(JSONB, nullable=True)
-    chunked_text = Column(Text)
+    document_metadata = Column(JSONB)
+    chunked_text = Column(String)
     embedding = Column(Vector(1536))  # Assuming your embeddings are 1536 dimensions, adjust if needed.
     chatbot = relationship("Chatbot", back_populates="documents")
 
