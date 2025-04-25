@@ -25,13 +25,20 @@ def chatbot_page():
         st.session_state.current_page = "conversation_page"
         close_conversation_form()
 
-    h1, h2, h3 = st.columns([0.3, 0.3, 0.4])
+    h1, h2, h3, h4 = st.columns([0.25, 0.25, 0.25, 0.25])
     with h1:
-        if st.button("Back to Landing Page"):
+        if st.button("Back", use_container_width=True):
             st.session_state.current_page = "landing_page"
             st.rerun()
     with h2:
-        st.button("New Conversation", on_click=open_conversation_form)
+        st.button("New Conversation", on_click=open_conversation_form, use_container_width=True)
+    with h3:
+        if st.button("Edit Chatbot", use_container_width=True):
+            pass
+    with h4:
+        if st.button("Knowledge Base", use_container_width=True):
+            st.session_state.current_page = "knowledge_base_page"
+            st.rerun()
 
     # Conversation form (modal)
     if st.session_state.show_conversation_form:
@@ -41,12 +48,10 @@ def chatbot_page():
 
             col1, col2 = st.sidebar.columns(2)
             with col1:
-                if st.sidebar.button("Save", on_click=create_new_conversation):
+                if st.sidebar.button("Save", on_click=create_new_conversation, use_container_width=True):
                     pass
             with col2:
-                st.sidebar.button("Cancel", on_click=close_conversation_form)
-    with h3:
-        pass
+                st.sidebar.button("Cancel", on_click=close_conversation_form, use_container_width=True)
 
     st.write(f"**Chatbot Name:** {st.session_state.chatbot_name}")
     st.write(f"**Chatbot Description:** {st.session_state.chatbot_description}")
