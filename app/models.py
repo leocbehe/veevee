@@ -48,7 +48,6 @@ class KnowledgeBaseDocument(Base):
     document_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
     chatbot_id = Column(UUID(as_uuid=True), ForeignKey("chatbots.chatbot_id"))
     file_name = Column(String)
-    file_path = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     document_metadata = Column(JSONB)
     chunked_text = Column(String)

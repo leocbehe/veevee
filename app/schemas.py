@@ -59,17 +59,19 @@ class ChatbotUpdate(Chatbot):
 """RAG document schemas"""
 
 class KnowledgeBaseDocumentBase(BaseModel):
+    document_id: uuid.UUID
     file_name: str
-    metadata: Optional[dict] = None
 
 class KnowledgeBaseDocumentCreate(KnowledgeBaseDocumentBase):
-    pass
-
-class KnowledgeBaseDocument(KnowledgeBaseDocumentBase):
-    document_id: uuid.UUID
     chatbot_id: uuid.UUID
-    file_path: str
+    context: str
+    file_path: Optional[str] = None
+    metadata: Optional[dict] = None
     upload_date: datetime
+    chunked_text: str
+    embedding: Optional[List[float]] = None
+
+class KnowledgeBaseDocumentUpdate(KnowledgeBaseDocumentBase):
 
     class Config:
         from_attributes = True
