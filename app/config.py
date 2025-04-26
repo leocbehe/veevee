@@ -1,5 +1,6 @@
 from typing import Set
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
 
 class Settings(BaseSettings):
     app_name: str = "veevee"
@@ -17,6 +18,7 @@ class Settings(BaseSettings):
     default_hf_model: str
     inference_provider: str
     default_ollama_model: str
+    app_dir: str = os.path.dirname(os.path.abspath(__file__))
 
     model_config: SettingsConfigDict = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

@@ -48,10 +48,13 @@ class KnowledgeBaseDocument(Base):
     document_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
     chatbot_id = Column(UUID(as_uuid=True), ForeignKey("chatbots.chatbot_id"))
     file_name = Column(String)
+    file_path = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    document_metadata = Column(JSONB)
-    chunked_text = Column(String)
-    embedding = Column(Vector(1536))  # Assuming your embeddings are 1536 dimensions, adjust if needed.
+    document_metadata = Column(JSONB, nullable=True)
+    context = Column(String, nullable=True)
+    raw_text = Column(Text, nullable=True)
+    chunked_text = Column(String, nullable=True)
+    embedding = Column(Vector(1536), nullable=True)  # Assuming your embeddings are 1536 dimensions, adjust if needed.
     chatbot = relationship("Chatbot", back_populates="documents")
 
 

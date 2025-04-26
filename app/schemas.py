@@ -67,11 +67,13 @@ class KnowledgeBaseDocumentCreate(KnowledgeBaseDocumentBase):
     context: str
     file_path: Optional[str] = None
     metadata: Optional[dict] = None
-    upload_date: datetime
-    chunked_text: str
+    created_at: datetime
+    raw_text: Optional[str] = None
+    chunked_text: Optional[str] = None
     embedding: Optional[List[float]] = None
 
 class KnowledgeBaseDocumentUpdate(KnowledgeBaseDocumentBase):
+    pass
 
     class Config:
         from_attributes = True

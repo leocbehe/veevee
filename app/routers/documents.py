@@ -2,6 +2,7 @@ from ..database import get_db
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from ..rag import read_tmp_document
 
 from app import models, schemas, database
 from app.oauth2 import get_current_user
@@ -25,6 +26,8 @@ def create_document(document: schemas.KnowledgeBaseDocumentCreate, db: Session =
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to add documents to this chatbot")
 
     db_document = models.KnowledgeBaseDocument(**document.model_dump())
+    db_document.raw_text = read_tmp_document(document.file_name)
+
     db.add(db_document)
     db.commit()
     db.refresh(db_document)
