@@ -3,8 +3,9 @@ from ..database import get_db
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from ..rag import read_tmp_document
+from typing import List
 
-from app import models, schemas, database
+from app import models, schemas
 from app.oauth2 import get_current_user
 
 router = APIRouter(
@@ -88,3 +89,18 @@ def delete_document(document_id: str, db: Session = Depends(get_db), current_use
     db.delete(db_document)
     db.commit()
     return
+
+@router.get("/by_chatbot/{chatbot_id}", response_model=List[schemas.KnowledgeBaseDocument])
+def read_documents_by_chatbot(chatbot_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """
+    Retrieve all documents associated with a given chatbot ID.
+    """
+    # Verify that the chatbot exists and the current user owns it
+    chatbot = db.query(models.Chatbot).filter(models.Chatbot.chatbot_id == chatbot_id).first()
+    if not chatbot:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chatbot not found")
+    if chatbot.owner_id != current_user.user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to view documents for this chatbot")
+
+    documents = db.query(models.KnowledgeBaseDocument).filter(models.KnowledgeBaseDocument.chatbot_id == chatbot_id).all()
+    return documents

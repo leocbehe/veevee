@@ -60,14 +60,21 @@ class ChatbotUpdate(Chatbot):
 
 class KnowledgeBaseDocumentBase(BaseModel):
     document_id: uuid.UUID
+    chatbot_id: uuid.UUID
     file_name: str
 
-class KnowledgeBaseDocumentCreate(KnowledgeBaseDocumentBase):
-    chatbot_id: uuid.UUID
-    context: str
-    file_path: Optional[str] = None
-    metadata: Optional[dict] = None
+class KnowledgeBaseDocument(KnowledgeBaseDocumentBase):
     created_at: datetime
+    file_path: Optional[str]
+    context: Optional[str]
+    document_metadata: Optional[dict] = None
+    raw_text: Optional[str] = None
+
+class KnowledgeBaseDocumentCreate(KnowledgeBaseDocumentBase):
+    context: str
+    created_at: datetime
+    file_path: Optional[str] = None
+    document_metadata: Optional[dict] = None
     raw_text: Optional[str] = None
     chunked_text: Optional[str] = None
     embedding: Optional[List[float]] = None

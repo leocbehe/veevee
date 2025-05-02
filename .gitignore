@@ -1,2 +1,4 @@
 .env
 app/test.py
+veevee_diary.txt
+app/tmp/
