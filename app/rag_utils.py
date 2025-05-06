@@ -1,0 +1,52 @@
+from .config import settings
+import os
+import io
+import nltk
+nltk.download('punkt')
+nltk.download('punkt_tab')
+from nltk.tokenize import sent_tokenize
+from pypdf import PdfReader
+
+def get_pdf_text(file_path: str):
+    text = ""
+    try:
+        with open(file_path, 'rb') as f:
+            pdf_reader = PdfReader(f)
+            for page in pdf_reader.pages:
+                text += page.extract_text().strip() + "\n\n"
+        return text
+    except Exception as e:
+        print(f"Error extracting text from PDF: {e}")
+        return ""
+
+def read_tmp_document(file_name: str):
+    abs_file_path = os.path.join(settings.app_dir, "tmp", file_name)
+    print(f"Reading cache file {abs_file_path}")
+    if file_name.endswith(".pdf"):
+        return get_pdf_text(abs_file_path)
+    else:
+        with open(abs_file_path, "r", encoding="utf-8") as f:
+            return f.read()
+
+def delete_cache():
+    cache_dir = os.path.join(settings.app_dir, "tmp")
+    for file_name in os.listdir(cache_dir):
+        os.remove(os.path.join(cache_dir, file_name))
+
+def chunk_text(text: str, chunk_size: int = 1000, chunk_overlap: int = 200):
+    sentences = sent_tokenize(text)
+    chunks = []
+    current_chunk = ""
+    overlap_cache = []
+    for sentence in sentences:
+        if len(current_chunk) + len(sentence) + 1 <= chunk_size:
+            current_chunk += " " + sentence
+            overlap_cache.append(sentence)
+            if len(" ".join(overlap_cache)) > chunk_overlap:
+                overlap_cache.pop(0)
+        else:
+            chunks.append(current_chunk.strip())
+            current_chunk = " ".join(overlap_cache) + " " + sentence
+    if current_chunk:
+        chunks.append(current_chunk.strip())
+    return chunks

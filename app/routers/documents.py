@@ -2,7 +2,7 @@ from ..database import get_db
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from ..rag import read_tmp_document
+from ..rag_utils import read_tmp_document, chunk_text
 from typing import List
 
 from app import models, schemas
@@ -28,13 +28,18 @@ def create_document(document: schemas.KnowledgeBaseDocumentCreate, db: Session =
 
     db_document = models.KnowledgeBaseDocument(**document.model_dump())
     db_document.raw_text = read_tmp_document(document.file_name)
+    chunks = chunk_text(db_document.raw_text)
+    
+    for c in chunks:
+        chunk = models.DocumentChunk(document_id=db_document.document_id, chunk_text=c)
+        db_document.chunks.append(chunk)
 
     db.add(db_document)
     db.commit()
     db.refresh(db_document)
     return db_document
 
-@router.get("/{document_id}", response_model=schemas.KnowledgeBaseDocumentCreate)
+@router.get("/{document_id}", response_model=schemas.KnowledgeBaseDocument)
 def read_document(document_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     """
     Retrieve a document by its ID.
@@ -50,8 +55,8 @@ def read_document(document_id: str, db: Session = Depends(get_db), current_user:
 
     return db_document
 
-@router.put("/{document_id}", response_model=schemas.KnowledgeBaseDocumentCreate)
-def update_document(document_id: str, document: schemas.KnowledgeBaseDocumentCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+@router.put("/{document_id}", response_model=schemas.KnowledgeBaseDocumentUpdate)
+def update_document(document_id: str, document: schemas.KnowledgeBaseDocumentUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     """
     Update a document.
     """

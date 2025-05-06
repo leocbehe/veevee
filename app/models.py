@@ -53,8 +53,8 @@ class KnowledgeBaseDocument(Base):
     document_metadata = Column(JSONB, nullable=True)
     context = Column(String, nullable=True)
     raw_text = Column(Text, nullable=True)
-    chunked_text = Column(String, nullable=True)
     embedding = Column(Vector(1536), nullable=True)  # Assuming your embeddings are 1536 dimensions, adjust if needed.
+    chunks = relationship("DocumentChunk", back_populates="document")
     chatbot = relationship("Chatbot", back_populates="documents")
 
 
@@ -81,3 +81,12 @@ class Message(Base):
     role = Column(String)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     conversation = relationship("Conversation", back_populates="messages")
+
+class DocumentChunk(Base):
+    __tablename__ = "documentchunk"
+
+    chunk_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    document_id = Column(UUID(as_uuid=True), ForeignKey("knowledgebasedocuments.document_id"))
+    chunk_text = Column(String)
+    chunk_metadata = Column(JSONB, nullable=True)
+    document = relationship("KnowledgeBaseDocument", back_populates="chunks")

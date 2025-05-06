@@ -6,6 +6,7 @@ import app.ui.chatbot_ui as chatbot_ui
 import app.ui.conversation_ui as conversation_ui
 import app.ui.landing_ui as landing_ui
 import app.ui.knowledge_base_ui as knowledge_base_ui
+import app.ui.context_edit_ui as context_edit_ui
 
 
 # DECLARATIONS --------------------------------------------------------------------------------------------
@@ -28,7 +29,8 @@ def initialize_session_state():
         "chatbot_model_path",
         "conversation_id",
         "conversation_description",
-        "new_conversation_description"
+        "new_conversation_description",
+        "document_id",
     ]
     for key in keys:
         if key not in st.session_state:
@@ -109,6 +111,8 @@ if 'access_token' in st.session_state and st.session_state.access_token and is_t
         conversation_ui.conversation_page()
     elif st.session_state.current_page == "knowledge_base_page":
         knowledge_base_ui.knowledge_base_page()
+    elif st.session_state.current_page == "context_edit_page":
+        context_edit_ui.context_edit_page()
 else:
     st.markdown("<h1 style='text-align: center;'>VeeVee UI</h1>", unsafe_allow_html=True)
     st.warning("Warning: Refreshing the page will log you out!")

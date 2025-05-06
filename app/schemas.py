@@ -76,11 +76,16 @@ class KnowledgeBaseDocumentCreate(KnowledgeBaseDocumentBase):
     file_path: Optional[str] = None
     document_metadata: Optional[dict] = None
     raw_text: Optional[str] = None
-    chunked_text: Optional[str] = None
     embedding: Optional[List[float]] = None
 
-class KnowledgeBaseDocumentUpdate(KnowledgeBaseDocumentBase):
-    pass
+class KnowledgeBaseDocumentUpdate(BaseModel):
+    chatbot_id: Optional[uuid.UUID] = None
+    file_name: Optional[str] = None
+    context: Optional[str] = None
+    file_path: Optional[str] = None
+    document_metadata: Optional[dict] = None
+    raw_text: Optional[str] = None
+    embedding: Optional[List[float]] = None
 
     class Config:
         from_attributes = True

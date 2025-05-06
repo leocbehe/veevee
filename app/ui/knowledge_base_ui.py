@@ -3,7 +3,9 @@ import os
 import datetime
 import requests
 import uuid
+from ..rag_utils import delete_cache
 from ..config import settings
+
 
 def cache_file(upload_file):
     # set temp dir and file path
@@ -28,7 +30,9 @@ def get_knowledge_base_documents(chatbot_id):
     if response.status_code == 200:
         return response.json()
     else:
-        st.error(f"failed to retrieve knowledge base documents for chatbot {chatbot_id}: {response.status_code}")
+        st.error(
+            f"failed to retrieve knowledge base documents for chatbot {chatbot_id}: {response.status_code}"
+        )
         return []
 
 
@@ -78,34 +82,41 @@ def knowledge_base_page():
         st.session_state.uploaded_documents = get_knowledge_base_documents(
             st.session_state.chatbot_id
         )
-    st.subheader("Uploaded Documents")
-    for file_data in st.session_state.uploaded_documents:
-        col1, col2, col3, col4 = st.columns([4, 2, 2, 1])
-        with col1:
-            st.write(f"- {file_data['file_name']}")
-        with col2:
-            st.write(f"Uploaded: {file_data['created_at']}")
-        with col3:
-            if st.button("Edit Context", key=file_data["file_name"]):
-                st.session_state.selected_file = file_data["file_name"]
-                st.session_state.current_page = "context_edit_page"
-                st.rerun()
-        with col4:
-            if st.button(
-                "❌",
-                key=file_data["file_name"] + "_delete",
-                use_container_width=True,
-            ):
-                response = requests.delete(
-                    f"http://localhost:8000/documents/{file_data['document_id']}",
-                    headers={"Authorization": f"Bearer {st.session_state.access_token}"},
-                )
-                if response.status_code == 204:
-                    st.success(f"Document '{file_data['file_name']}' deleted.")
-                    st.session_state.uploaded_documents.remove(file_data)
+    # sort the uploaded documents by file name
+    st.session_state.uploaded_documents.sort(key=lambda x: x["file_name"])
+
+    with st.container():
+        for file_data in st.session_state.uploaded_documents:
+            col1, col2, col3, col4 = st.columns([4, 2, 2, 1])
+            with col1:
+                st.write(f"- {file_data['file_name']}")
+            with col2:
+                st.write(f"Uploaded: {file_data['created_at']}")
+            with col3:
+                if st.button("Edit Context", key=file_data["file_name"]):
+                    st.session_state.document_id = file_data["document_id"]
+                    st.session_state.current_page = "context_edit_page"
                     st.rerun()
-                else:
-                    st.error(f"Failed to delete document '{file_data['file_name']}'.")
+            with col4:
+                if st.button(
+                    "❌",
+                    key=file_data["file_name"] + "_delete",
+                    use_container_width=True,
+                ):
+                    response = requests.delete(
+                        f"http://localhost:8000/documents/{file_data['document_id']}",
+                        headers={
+                            "Authorization": f"Bearer {st.session_state.access_token}"
+                        },
+                    )
+                    if response.status_code == 204:
+                        st.success(f"Document '{file_data['file_name']}' deleted.")
+                        st.session_state.uploaded_documents.remove(file_data)
+                        st.rerun()
+                    else:
+                        st.error(
+                            f"Failed to delete document '{file_data['file_name']}'."
+                        )
 
     col1, col2, _ = st.columns([2, 1, 4])
     with col1:
@@ -115,10 +126,14 @@ def knowledge_base_page():
             st.rerun()
     with col2:
         if st.button("Save"):
+            delete_cache()
             for document in st.session_state.new_documents:
-                if document["file_name"] in [d["file_name"] for d in st.session_state.uploaded_documents]:
+                if document["file_name"] in [
+                    d["file_name"] for d in st.session_state.uploaded_documents
+                ]:
                     continue
                 abs_file_path = cache_file(document)
+            for document in st.session_state.new_documents:
                 json_params = {
                     "document_id": str(uuid.uuid4()),
                     "chatbot_id": st.session_state.chatbot_id,
