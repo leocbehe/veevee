@@ -39,18 +39,30 @@ def context_edit_page():
                 col1, col2 = st.columns([5, 1])  # Adjust column widths as needed
 
                 with col1:
+                    text_preview_key = f"text_preview_{document['document_id']}"
                     context_key = f"context_{document['document_id']}"
+                    if text_preview_key not in st.session_state:
+                        st.session_state[text_preview_key] = (
+                            document["raw_text"][:5000]+"... " or ""
+                        )  # Initialize with existing text preview
                     if context_key not in st.session_state:
                         st.session_state[context_key] = (
                             document["context"] or ""
                         )  # Initialize with existing context
 
-                    st.session_state[context_key] = st.text_area(
+                    st.text_area(
+                        "Text Preview:",
+                        value=st.session_state[text_preview_key],
+                        height=200,
+                        key=f"text_preview_area_{document['document_id']}",
+                        label_visibility="visible",
+                    )
+                    st.text_area(
                         "Context:",
                         value=st.session_state[context_key],
-                        height=200,
+                        height=100,
                         key=f"context_area_{document['document_id']}",
-                        label_visibility="collapsed",
+                        label_visibility="visible"
                     )
 
                 with col2:
@@ -121,7 +133,7 @@ def summarize_document(document_id: uuid.UUID, raw_text: str):
             },
             {
             "role": "user",
-            "content": raw_text
+            "content": ( raw_text if len(raw_text) < 5000 else raw_text[:5000] + "...") 
             }
         ]
     )

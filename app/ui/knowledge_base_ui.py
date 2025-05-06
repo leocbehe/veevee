@@ -67,6 +67,7 @@ def knowledge_base_page():
                 f["file_name"] for f in st.session_state.new_documents
             ]:
 
+                print(f"appending document to new documents: {new_document}")
                 # Add the file to the session state
                 st.session_state.new_documents.append(
                     {
@@ -128,9 +129,9 @@ def knowledge_base_page():
         if st.button("Save"):
             delete_cache()
             for document in st.session_state.new_documents:
-                if document["file_name"] in [
-                    d["file_name"] for d in st.session_state.uploaded_documents
-                ]:
+                print(f"in new documents: {document}")
+                if document["file_name"] in [ d["file_name"] for d in st.session_state.uploaded_documents ]:
+                    print(f"skipping {document['file_name']} because it already exists")
                     continue
                 abs_file_path = cache_file(document)
             for document in st.session_state.new_documents:
@@ -143,6 +144,7 @@ def knowledge_base_page():
                     "created_at": document["created_at"],
                 }
 
+                print(f"calling create document with {json_params}")
                 requests.post(
                     "http://localhost:8000/documents/",
                     json=json_params,

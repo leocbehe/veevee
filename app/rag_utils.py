@@ -33,20 +33,21 @@ def delete_cache():
     for file_name in os.listdir(cache_dir):
         os.remove(os.path.join(cache_dir, file_name))
 
-def chunk_text(text: str, chunk_size: int = 1000, chunk_overlap: int = 200):
+def chunk_text(text: str, chunk_size: int = 1000):
     sentences = sent_tokenize(text)
     chunks = []
     current_chunk = ""
-    overlap_cache = []
+    previous_sentence = ""
+
     for sentence in sentences:
         if len(current_chunk) + len(sentence) + 1 <= chunk_size:
-            current_chunk += " " + sentence
-            overlap_cache.append(sentence)
-            if len(" ".join(overlap_cache)) > chunk_overlap:
-                overlap_cache.pop(0)
+            current_chunk += sentence + " "
         else:
-            chunks.append(current_chunk.strip())
-            current_chunk = " ".join(overlap_cache) + " " + sentence
+            if current_chunk:
+                chunks.append(current_chunk.strip())
+            current_chunk = previous_sentence + " " + sentence + " "
+        previous_sentence = sentence
+
     if current_chunk:
         chunks.append(current_chunk.strip())
     return chunks
