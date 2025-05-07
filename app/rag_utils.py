@@ -2,10 +2,11 @@ from .config import settings
 import os
 import io
 import nltk
-nltk.download('punkt')
-nltk.download('punkt_tab')
 from nltk.tokenize import sent_tokenize
 from pypdf import PdfReader
+from sentence_transformers import SentenceTransformer
+nltk.download('punkt')
+nltk.download('punkt_tab')
 
 def get_pdf_text(file_path: str):
     text = ""
@@ -51,3 +52,11 @@ def chunk_text(text: str, chunk_size: int = 1000):
     if current_chunk:
         chunks.append(current_chunk.strip())
     return chunks
+
+def chunk_to_embedding(chunk: str):
+    model = SentenceTransformer('all-mpnet-base-v2')
+    embedding = model.encode(chunk)
+    print(f"chunk: {chunk}")
+    print(f"embedding shape: {embedding.shape}")
+    print(f"embedding: {embedding}")
+    return embedding
