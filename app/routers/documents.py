@@ -31,7 +31,7 @@ def create_document(document: schemas.KnowledgeBaseDocumentCreate, db: Session =
     chunks = chunk_text(db_document.raw_text)
     
     for c in chunks:
-        chunk = models.DocumentChunk(document_id=db_document.document_id, chunk_text=c)
+        chunk = models.DocumentChunks(document_id=db_document.document_id, chunk_text=c)
         db_document.chunks.append(chunk)
 
     db.add(db_document)
