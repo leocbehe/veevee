@@ -18,7 +18,7 @@ db_name = os.getenv("db_name")
 
 DB_URL = f"postgresql://{db_username}:{db_password}@{db_hostname}:{db_port}/{db_name}"
 
-engine = sqlalchemy.create_engine(DB_URL)
+engine = sqlalchemy.create_engine(DB_URL, echo=True)
 SessionLocal = sqlalchemy.orm.sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():
