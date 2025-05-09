@@ -53,7 +53,6 @@ class KnowledgeBaseDocument(Base):
     document_metadata = Column(JSONB, nullable=True)
     context = Column(String, nullable=True)
     raw_text = Column(Text, nullable=True)
-    chunks = relationship("DocumentChunks", back_populates="document")
     chatbot = relationship("Chatbot", back_populates="documents")
 
 
@@ -88,4 +87,3 @@ class DocumentChunks(Base):
     document_id = Column(UUID(as_uuid=True), ForeignKey("knowledgebasedocuments.document_id"))
     chunk_text = Column(String)
     chunk_metadata = Column(JSONB, nullable=True)
-    document = relationship("KnowledgeBaseDocument", back_populates="chunks")
