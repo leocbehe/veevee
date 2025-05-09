@@ -53,7 +53,6 @@ class KnowledgeBaseDocument(Base):
     document_metadata = Column(JSONB, nullable=True)
     context = Column(String, nullable=True)
     raw_text = Column(Text, nullable=True)
-    embedding = Column(Vector(1536), nullable=True)  # Assuming your embeddings are 1536 dimensions, adjust if needed.
     chunks = relationship("DocumentChunks", back_populates="document")
     chatbot = relationship("Chatbot", back_populates="documents")
 

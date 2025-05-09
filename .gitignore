@@ -2,3 +2,5 @@
 app/test.py
 veevee_diary.txt
 app/tmp/
+app/__pycache__/
+app/*/__pycache__/

@@ -76,7 +76,6 @@ class KnowledgeBaseDocumentCreate(KnowledgeBaseDocumentBase):
     file_path: Optional[str] = None
     document_metadata: Optional[dict] = None
     raw_text: Optional[str] = None
-    embedding: Optional[List[float]] = None
 
 class KnowledgeBaseDocumentUpdate(BaseModel):
     chatbot_id: Optional[uuid.UUID] = None
@@ -85,7 +84,6 @@ class KnowledgeBaseDocumentUpdate(BaseModel):
     file_path: Optional[str] = None
     document_metadata: Optional[dict] = None
     raw_text: Optional[str] = None
-    embedding: Optional[List[float]] = None
 
     class Config:
         from_attributes = True
