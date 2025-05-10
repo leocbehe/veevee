@@ -4,8 +4,11 @@ import io
 import nltk
 from nltk.tokenize import sent_tokenize
 from pypdf import PdfReader
-nltk.download('punkt')
-nltk.download('punkt_tab')
+try:
+    nltk.data.find('tokenizers/punkt')
+except nltk.downloader.DownloadError:
+    nltk.download('punkt')
+    nltk.download('punkt_tab')
 
 def get_pdf_text(file_path: str):
     text = ""
