@@ -2,4 +2,4 @@
 app/test.py
 veevee_diary.txt
 app/tmp/
-__pycache__/
+**/__pycache__
