@@ -2,7 +2,7 @@ from ..database import get_db
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from ..rag_utils import read_tmp_document, chunk_text
+from ..rag_utils import read_tmp_document, chunk_text, chunk_to_embedding
 from typing import List
 
 from app import models, schemas
@@ -31,8 +31,9 @@ def create_document(document: schemas.KnowledgeBaseDocumentCreate, db: Session =
     chunks = chunk_text(db_document.raw_text)
     
     for c in chunks:
-        chunk = models.DocumentChunks(document_id=db_document.document_id, chunk_text=c)
-        db_document.chunks.append(chunk)
+        emb = chunk_to_embedding(c)
+        document_chunk = models.DocumentChunks(document_id=db_document.document_id, chunk_text=c, chunk_embedding=emb)
+        db_document.chunks.append(document_chunk)
 
     db.add(db_document)
     db.commit()

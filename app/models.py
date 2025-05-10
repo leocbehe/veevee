@@ -88,4 +88,5 @@ class DocumentChunks(Base):
     document_id = Column(UUID(as_uuid=True), ForeignKey("knowledgebasedocuments.document_id", ondelete="CASCADE"))
     chunk_text = Column(String)
     chunk_metadata = Column(JSONB, nullable=True)
+    chunk_embedding = Column(Vector(768))
     document = relationship("KnowledgeBaseDocument", back_populates="chunks")
