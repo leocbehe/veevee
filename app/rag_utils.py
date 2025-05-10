@@ -59,7 +59,4 @@ def chunk_to_embedding(chunk: str):
     from sentence_transformers import SentenceTransformer
     model = SentenceTransformer('all-mpnet-base-v2')
     embedding = model.encode(chunk)
-    print(f"chunk: {chunk}")
-    print(f"embedding shape: {embedding.shape}")
-    print(f"embedding: {embedding}")
     return embedding

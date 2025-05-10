@@ -53,7 +53,7 @@ class KnowledgeBaseDocument(Base):
     document_metadata = Column(JSONB, nullable=True)
     context = Column(String, nullable=True)
     raw_text = Column(Text, nullable=True)
-    chunks = relationship("DocumentChunks", back_populates="document")
+    chunks = relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan")
     chatbot = relationship("Chatbot", back_populates="documents")
 
 
@@ -81,7 +81,7 @@ class Message(Base):
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     conversation = relationship("Conversation", back_populates="messages")
 
-class DocumentChunks(Base):
+class DocumentChunk(Base):
     __tablename__ = "documentchunks"
 
     chunk_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

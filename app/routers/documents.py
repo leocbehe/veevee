@@ -32,7 +32,7 @@ def create_document(document: schemas.KnowledgeBaseDocumentCreate, db: Session =
     
     for c in chunks:
         emb = chunk_to_embedding(c)
-        document_chunk = models.DocumentChunks(document_id=db_document.document_id, chunk_text=c, chunk_embedding=emb)
+        document_chunk = models.DocumentChunk(document_id=db_document.document_id, chunk_text=c, chunk_embedding=emb)
         db_document.chunks.append(document_chunk)
 
     db.add(db_document)
