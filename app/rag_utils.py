@@ -4,7 +4,6 @@ import io
 import nltk
 from nltk.tokenize import sent_tokenize
 from pypdf import PdfReader
-from sentence_transformers import SentenceTransformer
 nltk.download('punkt')
 nltk.download('punkt_tab')
 
@@ -54,6 +53,7 @@ def chunk_text(text: str, chunk_size: int = 1000):
     return chunks
 
 def chunk_to_embedding(chunk: str):
+    from sentence_transformers import SentenceTransformer
     model = SentenceTransformer('all-mpnet-base-v2')
     embedding = model.encode(chunk)
     print(f"chunk: {chunk}")
