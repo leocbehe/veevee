@@ -1,6 +1,7 @@
+import streamlit as st
+import numpy as np
 from .config import settings
 import os
-import io
 import nltk
 from nltk.tokenize import sent_tokenize
 from pypdf import PdfReader
@@ -55,8 +56,13 @@ def chunk_text(text: str, chunk_size: int = 1000):
         chunks.append(current_chunk.strip())
     return chunks
 
-def chunk_to_embedding(chunk: str):
+@st.cache_resource
+def load_embedding_model():
     from sentence_transformers import SentenceTransformer
     model = SentenceTransformer('all-mpnet-base-v2')
+    return model
+
+def text_to_embedding(chunk: str):
+    model = load_embedding_model()
     embedding = model.encode(chunk)
     return embedding

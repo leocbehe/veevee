@@ -1,12 +1,15 @@
 import streamlit as st
+import numpy as np
 import requests
 import datetime
 import uuid
 import pprint
+from sklearn.metrics.pairwise import cosine_similarity
 from huggingface_hub import ChatCompletionOutput
 from typing import List
 from ..llm import LLMService
 from ..config import settings
+from ..rag_utils import text_to_embedding
 
 def conversation_page():
     if st.sidebar.button("Back to Chatbot Page"):
@@ -43,40 +46,103 @@ def conversation_page():
     # Input for new message
     user_input = st.chat_input("Type your message...")
     
+    # main entry point for inference
     if user_input:
-        # update messages on the frontend
-        st.session_state.conversation_messages.append({
-            "role": "user", 
-            "message_text": user_input,
-            "conversation_id": st.session_state.conversation_id,
-            "timestamp": datetime.datetime.now().isoformat()
-        })
+        handle_user_input(user_input)
         
-        # Generate chatbot response
-        print(f"Generating response for user input: {user_input}")
-        response_text = generate_response(st.session_state.conversation_messages)
 
-        if not response_text:
-            st.error("Failed to generate response from the chatbot.")
-            return None
-        
-        # Add chatbot response to conversation history
-        st.session_state.conversation_messages.append({
-            "role": "assistant", 
-            "message_text": response_text,
-            "conversation_id": st.session_state.conversation_id,
-            "timestamp": datetime.datetime.now().isoformat()
-        })
+def handle_user_input(user_input):
+    """The main function to handle user input and generate chatbot responses."""
+    st.session_state.conversation_messages.append({
+        "role": "user", 
+        "message_text": user_input,
+        "conversation_id": st.session_state.conversation_id,
+        "timestamp": datetime.datetime.now().isoformat()
+    })
+    
+    # Generate chatbot response
+    print(f"Generating response for user input: {user_input}")
+    response_text = generate_response(st.session_state.conversation_messages)
 
-        # update messages on the backend
-        update_messages_backend(st.session_state.conversation_id, st.session_state.conversation_messages)
-        
-        # Rerun to refresh the page and show new messages
-        st.rerun()
+    if not response_text:
+        st.error("Failed to generate response from the chatbot.")
+        return None
+    
+    # Add chatbot response to conversation history
+    st.session_state.conversation_messages.append({
+        "role": "assistant", 
+        "message_text": response_text,
+        "conversation_id": st.session_state.conversation_id,
+        "timestamp": datetime.datetime.now().isoformat()
+    })
+
+    # update messages on the backend
+    update_messages_backend(st.session_state.conversation_id, st.session_state.conversation_messages)
+    
+    # Rerun to refresh the page and show new messages
+    st.rerun()
+
+def add_knowledge_base_context(conversation_history):
+    """Adds context from the knowledge base based on the user's prompt.
+    This is done by checking the similarity of the user's question with the chunk embeddings
+    in the knowledge base table, then adding any chunks that have relevant embeddings by 
+    integrating the chunk text into the prompt."""
+ 
+    chunks = None
+    try:
+        # get document ids for the current chatbot
+        response = requests.get(
+            f"http://localhost:8000/documents/by_chatbot/{st.session_state.chatbot_id}",
+            headers={"Authorization": f"Bearer {st.session_state.access_token}"}
+        )
+        document_ids = [d['document_id'] for d in response.json()]
+
+        # get the document chunks associated with the document ids
+        response = requests.post(
+            f"http://localhost:8000/documents/document_chunks/",
+            json=document_ids,
+            headers={"Authorization": f"Bearer {st.session_state.access_token}"}
+        )
+
+        if response.status_code == 200:
+            chunks = response.json()
+        else:
+            st.write(f"unexpected response while fetching chunks from the knowledge base: {response.status_code}")
+
+    except Exception as e:
+        st.error(f"Error connecting to FastAPI route: {e}")
+
+    if not chunks:
+        st.write("No chunks found in the knowledge base.")
+        return None
+    
+    user_prompt = conversation_history[-1]["message_text"]
+
+    # generate embedding from user prompt
+    user_prompt_embedding = text_to_embedding(user_prompt).reshape(1, -1)
+    # sort the chunks by similarity to the user prompt
+    chunks = sorted(chunks, key=lambda x: cosine_similarity(np.array(x['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0], reverse=True)
+    for chunk in chunks:
+        cos_sim = cosine_similarity(np.array(chunk['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0]
+        print(f"cos_sim: {cos_sim}")
+
+    print(f"text of top 5 chunks: {[chunk['chunk_text'] for chunk in chunks[:5]]}")
+    context_text = [chunk['chunk_text'] for chunk in chunks[:5]]
+
+    user_prompt_with_context = "CONTEXT: " + "\n\n".join(context_text)
+    user_prompt_with_context += "\n\nPROMPT: " + f"Using the above context as needed, please answer the following question: {user_prompt}"
+ 
+    conversation_history[-1]["message_text"] = user_prompt_with_context
+
+
 
 def generate_response(conversation_history):
     # Initialize the LLM service    
     service = LLMService(inference_provider="ollama")
+    service.stream = True
+
+    add_knowledge_base_context(conversation_history)
+
     # huggingface is expecting a list with only "role" and "content" keys, so we need to remove the "conversation_id" and "timestamp" keys
     formatted_conversation_history = [
         {
@@ -86,7 +152,7 @@ def generate_response(conversation_history):
         for message in conversation_history
     ]
 
-    response_generator = service.generate(formatted_conversation_history, stream=True)
+    response_generator = service.generate(formatted_conversation_history)
 
     full_response = ""
     response_placeholder = st.empty() 
@@ -108,7 +174,6 @@ def generate_response(conversation_history):
 def create_conversation():
     st.session_state.conversation_id = str(uuid.uuid4())
     try:
-        print(f"Creating conversation with ID: {st.session_state.conversation_id}")
         response = requests.post(
             f"http://localhost:8000/conversations/",
             json={
@@ -134,7 +199,6 @@ def create_conversation():
     return st.session_state.conversation_id
 
 def update_messages_backend(conversation_id, messages):
-    pprint.pprint(messages)
     try:
         response = requests.put(
             f"http://localhost:8000/conversations/",

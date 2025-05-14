@@ -88,6 +88,23 @@ class KnowledgeBaseDocumentUpdate(BaseModel):
     class Config:
         from_attributes = True
 
+"""Document chunk schemas"""
+
+class DocumentChunkBase(BaseModel):
+    chunk_id: uuid.UUID
+    document_id: uuid.UUID
+    chunk_metadata: Optional[dict] = None
+
+class DocumentChunk(DocumentChunkBase):
+    chunk_text: str
+    chunk_embedding: List[float]
+
+class DocumentChunkText(DocumentChunkBase):
+    chunk_text: str
+
+class DocumentChunkEmbedding(DocumentChunkBase):
+    chunk_embedding: List[float]
+
 """Message schemas"""
 
 class MessageBase(BaseModel):

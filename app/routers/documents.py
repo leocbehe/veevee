@@ -2,7 +2,7 @@ from ..database import get_db
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from ..rag_utils import read_tmp_document, chunk_text, chunk_to_embedding
+from ..rag_utils import read_tmp_document, chunk_text, text_to_embedding
 from typing import List
 
 from app import models, schemas
@@ -31,7 +31,7 @@ def create_document(document: schemas.KnowledgeBaseDocumentCreate, db: Session =
     chunks = chunk_text(db_document.raw_text)
     
     for c in chunks:
-        emb = chunk_to_embedding(c)
+        emb = text_to_embedding(c)
         document_chunk = models.DocumentChunk(document_id=db_document.document_id, chunk_text=c, chunk_embedding=emb)
         db_document.chunks.append(document_chunk)
 
@@ -110,3 +110,14 @@ def read_documents_by_chatbot(chatbot_id: str, db: Session = Depends(get_db), cu
 
     documents = db.query(models.KnowledgeBaseDocument).filter(models.KnowledgeBaseDocument.chatbot_id == chatbot_id).all()
     return documents
+
+@router.post("/document_chunks", response_model=List[schemas.DocumentChunk])
+def get_document_chunks(document_ids: List[str], db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """
+    Retrieve document chunks by document IDs.
+    """
+    print(f"Received document IDs: {document_ids}")
+
+    chunks = db.query(models.DocumentChunk).filter(models.DocumentChunk.document_id.in_(document_ids)).all()
+    print(f"returning chunks: {chunks}")
+    return chunks
