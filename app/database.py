@@ -1,12 +1,9 @@
 import sqlalchemy
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
 from dotenv import load_dotenv
-from jose import JWTError, jwt
-from fastapi import HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import HTTPException
 import os
-from . import models, dependencies, schemas
+from . import models, dependencies
 from .config import settings
 
 load_dotenv()

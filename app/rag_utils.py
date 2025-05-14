@@ -1,5 +1,4 @@
 import streamlit as st
-import numpy as np
 from .config import settings
 import os
 import nltk

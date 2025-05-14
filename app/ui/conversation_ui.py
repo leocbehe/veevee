@@ -5,10 +5,7 @@ import datetime
 import uuid
 import pprint
 from sklearn.metrics.pairwise import cosine_similarity
-from huggingface_hub import ChatCompletionOutput
-from typing import List
 from ..llm import LLMService
-from ..config import settings
 from ..rag_utils import text_to_embedding
 
 def conversation_page():

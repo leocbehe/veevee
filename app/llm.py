@@ -3,7 +3,7 @@ import sys
 from typing import Optional
 from .config import settings
 
-from huggingface_hub import InferenceClient, ChatCompletionOutput
+from huggingface_hub import InferenceClient
 from ollama import Client as OllamaClient
 
 
