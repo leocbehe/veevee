@@ -9,12 +9,15 @@ from ..llm import LLMService
 from ..rag_utils import text_to_embedding
 
 def conversation_page():
-    if st.sidebar.button("Back to Chatbot Page"):
-        st.session_state.current_page = "chatbot_page"
-        st.rerun()
-    st.sidebar.write(f"Chatting with {st.session_state.chatbot_name}")
-    if st.session_state.conversation_description:
-        st.sidebar.write(f"Topic: {st.session_state.conversation_description}")
+
+    c1, c2, c3 = st.columns([1, 5, 1])
+    with c1:
+        if st.button("⬅️"):
+            st.session_state.current_page = "chatbot_page"
+            st.rerun()
+    with c2:
+        st.markdown(f"<h3 style='text-align: center;'>chatting with {st.session_state.chatbot_name}</h1>", unsafe_allow_html=True)    
+    
     
     # Initialize conversation history in session state if not exists
     if 'conversation_messages' not in st.session_state:
@@ -79,7 +82,7 @@ def handle_user_input(user_input):
     # Rerun to refresh the page and show new messages
     st.rerun()
 
-def add_knowledge_base_context(conversation_history):
+def add_knowledge_base_context(user_prompt_text):
     """Adds context from the knowledge base based on the user's prompt.
     This is done by checking the similarity of the user's question with the chunk embeddings
     in the knowledge base table, then adding any chunks that have relevant embeddings by 
@@ -112,11 +115,9 @@ def add_knowledge_base_context(conversation_history):
     if not chunks:
         st.write("No chunks found in the knowledge base.")
         return None
-    
-    user_prompt = conversation_history[-1]["message_text"]
 
     # generate embedding from user prompt
-    user_prompt_embedding = text_to_embedding(user_prompt).reshape(1, -1)
+    user_prompt_embedding = text_to_embedding(user_prompt_text).reshape(1, -1)
     # sort the chunks by similarity to the user prompt
     chunks = sorted(chunks, key=lambda x: cosine_similarity(np.array(x['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0], reverse=True)
     for chunk in chunks:
@@ -125,11 +126,9 @@ def add_knowledge_base_context(conversation_history):
 
     print(f"text of top 5 chunks: {[chunk['chunk_text'] for chunk in chunks[:5]]}")
     context_text = [chunk['chunk_text'] for chunk in chunks[:5]]
+    context_message = "Please use the following text as needed in our conversation: \n\n" + "\n\n".join(context_text)
 
-    user_prompt_with_context = "CONTEXT: " + "\n\n".join(context_text)
-    user_prompt_with_context += "\n\nPROMPT: " + f"Using the above context as needed, please answer the following question: {user_prompt}"
- 
-    conversation_history[-1]["message_text"] = user_prompt_with_context
+    return context_message
 
 
 
@@ -138,7 +137,7 @@ def generate_response(conversation_history):
     service = LLMService(inference_provider="ollama")
     service.stream = True
 
-    add_knowledge_base_context(conversation_history)
+    context_message = add_knowledge_base_context(conversation_history)
 
     # huggingface is expecting a list with only "role" and "content" keys, so we need to remove the "conversation_id" and "timestamp" keys
     formatted_conversation_history = [
@@ -148,6 +147,9 @@ def generate_response(conversation_history):
         }
         for message in conversation_history
     ]
+    user_prompt = formatted_conversation_history.pop(-1)
+    formatted_conversation_history.append({"role": "user", "content": context_message})
+    formatted_conversation_history.append(user_prompt)
 
     response_generator = service.generate(formatted_conversation_history)
 
@@ -185,9 +187,8 @@ def create_conversation():
             headers={"Authorization": f"Bearer {st.session_state.access_token}"}
         )
         if response.status_code == 200:
-            st.success("Conversation created successfully!")
+            print("Conversation created successfully")
         else:
-            st.error(f"Failed to create conversation: {response.status_code} - {response.message_text}")
             print(f"Failed to create conversation: {response.status_code} - {response.message_text}")
             pprint.pprint(st.session_state)
     except Exception as e:

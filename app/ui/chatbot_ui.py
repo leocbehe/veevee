@@ -7,23 +7,12 @@ from .conversation_ui import create_conversation
 
 def chatbot_page():
     # Initialize session state variables
-    if "show_conversation_form" not in st.session_state:
-        st.session_state.show_conversation_form = False
-    if "new_conv_desc" not in st.session_state:
-        st.session_state.new_conv_desc = ""
+    if "conversation_description" not in st.session_state:
+        st.session_state.conversation_description = ""
 
-    def open_conversation_form():
-        st.session_state.show_conversation_form = True
-
-    def close_conversation_form():
-        st.session_state.show_conversation_form = False
-
-    def create_new_conversation():
-        st.session_state.conversation_description = st.session_state.new_conv_desc
-        create_conversation()
-        print(f"Conversation ID: {st.session_state.conversation_id}")
+    def open_new_conversation():
+        st.session_state.conversation_id = create_conversation()
         st.session_state.current_page = "conversation_page"
-        close_conversation_form()
 
     h1, h2, h3, h4 = st.columns([0.25, 0.25, 0.25, 0.25])
     with h1:
@@ -31,7 +20,7 @@ def chatbot_page():
             st.session_state.current_page = "landing_page"
             st.rerun()
     with h2:
-        st.button("New Conversation", on_click=open_conversation_form, use_container_width=True)
+        st.button("New Conversation", on_click=open_new_conversation, use_container_width=True)
     with h3:
         if st.button("Edit Chatbot", use_container_width=True):
             pass
@@ -39,19 +28,6 @@ def chatbot_page():
         if st.button("Knowledge Base", use_container_width=True):
             st.session_state.current_page = "knowledge_base_page"
             st.rerun()
-
-    # Conversation form (modal)
-    if st.session_state.show_conversation_form:
-        with st.sidebar.container():
-            st.sidebar.subheader("Create New Conversation")
-            st.session_state.new_conv_desc = st.sidebar.text_input("New Conversation Description", key="new_conversation_description", value=st.session_state.new_conv_desc)
-
-            col1, col2 = st.sidebar.columns(2)
-            with col1:
-                if st.sidebar.button("Save", on_click=create_new_conversation, use_container_width=True):
-                    pass
-            with col2:
-                st.sidebar.button("Cancel", on_click=close_conversation_form, use_container_width=True)
 
     st.write(f"**Chatbot Name:** {st.session_state.chatbot_name}")
     st.write(f"**Chatbot Description:** {st.session_state.chatbot_description}")
@@ -95,7 +71,6 @@ def chatbot_page():
                             st.rerun()
                     with c5:
                         if st.button("Delete", key=f"delete_{conversation['conversation_id']}"):
-                            print(f"delete command: http://localhost:8000/conversations/{conversation['conversation_id']}"),
                             response = requests.delete(
                                 f"http://localhost:8000/conversations/{conversation['conversation_id']}",
                                 headers={"Authorization": f"Bearer {st.session_state.access_token}"}

@@ -102,7 +102,7 @@ initialize_session_state()
 # CONDITIONAL RENDERING --------------------------------------------------------------------------------------------
 
 if 'access_token' in st.session_state and st.session_state.access_token and is_token_valid():
-    st.markdown("<h1 style='text-align: center;'>VeeVee UI</h1>", unsafe_allow_html=True)
+    # st.markdown("<h1 style='text-align: center;'>VeeVee UI</h1>", unsafe_allow_html=True)
     if st.session_state.current_page == "landing_page":
         landing_ui.landing_page()
     elif st.session_state.current_page == "chatbot_page":
