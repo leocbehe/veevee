@@ -7,6 +7,7 @@ import app.ui.conversation_ui as conversation_ui
 import app.ui.landing_ui as landing_ui
 import app.ui.knowledge_base_ui as knowledge_base_ui
 import app.ui.context_edit_ui as context_edit_ui
+import app.ui.profile_ui as profile_ui
 
 
 # DECLARATIONS --------------------------------------------------------------------------------------------
@@ -113,6 +114,8 @@ if 'access_token' in st.session_state and st.session_state.access_token and is_t
         knowledge_base_ui.knowledge_base_page()
     elif st.session_state.current_page == "context_edit_page":
         context_edit_ui.context_edit_page()
+    elif st.session_state.current_page == "profile_page":
+        profile_ui.profile_page()
 else:
     st.markdown("<h1 style='text-align: center;'>VeeVee UI</h1>", unsafe_allow_html=True)
     st.warning("Warning: Refreshing the page will log you out!")

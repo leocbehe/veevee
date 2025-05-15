@@ -1,6 +1,6 @@
 import streamlit as st
 import requests
-from  datetime import datetime
+from datetime import datetime
 
 def landing_page():
     # Initialize session state variables
@@ -18,6 +18,9 @@ def landing_page():
 
     def close_chatbot_form():
         st.session_state.show_chatbot_form = False
+
+    def open_profile_page():
+        st.session_state.current_page = "profile_page"
 
     def create_chatbot():
         try:
@@ -45,9 +48,8 @@ def landing_page():
             close_chatbot_form()
 
     # Button to open the chatbot form, placed above "Your Chatbots"
-    st.button("Create Chatbot", on_click=open_chatbot_form)
 
-    st.subheader("Your Chatbots:")
+    st.markdown(f"<h3 style='text-align: center;'>Your Chatbots</h2>", unsafe_allow_html=True)
 
     # Chatbot form (modal)
     if st.session_state.show_chatbot_form:
@@ -79,11 +81,11 @@ def landing_page():
             if chatbots:
                 for chatbot in chatbots:
                     st.markdown("<hr style='margin-top: 0.5em;'>", unsafe_allow_html=True)
-                    col1, col2, col3 = st.columns([0.6, 0.2, 0.2])
+                    col1, col2, col3 = st.columns([0.7, 0.15, 0.15])
                     with col1:
                         st.write(f"- {chatbot['chatbot_name']}")
                     with col2:
-                        if st.button(f"Select {chatbot['chatbot_name']}", key=f"select_{chatbot['chatbot_id']}"):
+                        if st.button(f"Select", key=f"select_{chatbot['chatbot_id']}", use_container_width=True):
                             st.session_state.chatbot_id = chatbot['chatbot_id']
                             st.session_state.chatbot_name = chatbot['chatbot_name']
                             st.session_state.chatbot_description = chatbot['description']
@@ -95,7 +97,7 @@ def landing_page():
                             st.session_state.current_page = "chatbot_page"
                             st.rerun()
                     with col3:
-                        if st.button(f"Delete {chatbot['chatbot_name']}", key=f"delete_{chatbot['chatbot_id']}"):
+                        if st.button(f"Delete", key=f"delete_{chatbot['chatbot_id']}", use_container_width=True):
                             response = requests.delete(
                                 f"http://localhost:8000/chatbots/{chatbot['chatbot_id']}",
                                 headers={"Authorization": f"Bearer {st.session_state.access_token}"}
@@ -112,3 +114,9 @@ def landing_page():
             st.error(f"Failed to retrieve chatbots: {response.status_code} - {response.text}")
     except Exception as e:
         st.error(f"Error connecting to the chatbot service: {str(e)}")
+
+    c1, c2, c3 = st.columns([1, 3, 1])
+    with c1:
+        st.button("Edit Profile", on_click=open_profile_page, use_container_width=True)
+    with c3:
+        st.button("New Chatbot", on_click=open_chatbot_form, use_container_width=True)
