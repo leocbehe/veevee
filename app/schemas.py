@@ -35,12 +35,12 @@ class User(UserBase):
 """Chatbot schemas"""
 
 class ChatbotBase(BaseModel):
+    chatbot_id: uuid.UUID
     chatbot_name: str
     description: str
     model_path: str
 
 class Chatbot(ChatbotBase):
-    chatbot_id: uuid.UUID
     owner_id: uuid.UUID
     created_at: datetime
     is_active: bool
@@ -53,8 +53,12 @@ class ChatbotCreate(ChatbotBase):
     class Config:
         from_attributes = True
 
-class ChatbotUpdate(Chatbot):
-    pass
+class ChatbotUpdate(BaseModel):
+    chatbot_name: Optional[str] = None
+    description: Optional[str] = None
+    model_path: Optional[str] = None
+    modelfile: Optional[str] = None
+    configuration: Optional[dict] = None
 
 """RAG document schemas"""
 

@@ -26,8 +26,6 @@ def get_chatbot(chatbot_id, db = Depends(get_db), current_user=Depends(oauth2_sc
 @router.post("/", response_model=schemas.Chatbot)
 def create_chatbot(chatbot: schemas.ChatbotCreate, db = Depends(get_db), current_user=Depends(oauth2_scheme)):
     new_chatbot = models.Chatbot(**chatbot.model_dump())
-    print(f"New chatbot: {new_chatbot}")
-    print(f"New chatbot config: {new_chatbot.configuration}")
     db.add(new_chatbot)
     db.commit()
     db.refresh(new_chatbot)

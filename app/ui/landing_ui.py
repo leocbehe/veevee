@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 from datetime import datetime
+import uuid
 
 def landing_page():
     # Initialize session state variables
@@ -13,62 +14,42 @@ def landing_page():
     if "new_chatbot_model_path" not in st.session_state:
         st.session_state.new_chatbot_model_path = ""
 
-    def open_chatbot_form():
-        st.session_state.show_chatbot_form = True
-
-    def close_chatbot_form():
-        st.session_state.show_chatbot_form = False
-
-    def open_profile_page():
-        st.session_state.current_page = "profile_page"
-
-    def create_chatbot():
+    def create_new_chatbot():
+        chatbot_id = str(uuid.uuid4())
+        chatbot_name = ""
+        chatbot_description = ""
+        chatbot_model_path = ""
+        chatbot_owner_id = st.session_state.user_id
+        chatbot_created_at = datetime.now().isoformat()
         try:
-            print(f"Creating chatbot with name: {st.session_state.new_chatbot_name}")
-            print(f"datetime: {datetime.now().isoformat()}")
             response = requests.post(
                 "http://localhost:8000/chatbots/",
                 json={
-                    "chatbot_name": st.session_state.new_chatbot_name,
-                    "description": st.session_state.new_chatbot_description,
-                    "model_path": st.session_state.new_chatbot_model_path,
-                    "configuration": st.session_state.new_chatbot_config,
-                    "created_at": datetime.now().isoformat(),
-                    "owner_id": st.session_state.user_id
+                    "chatbot_id": chatbot_id,
+                    "chatbot_name": chatbot_name,
+                    "description": chatbot_description,
+                    "model_path": chatbot_model_path,
+                    "owner_id": chatbot_owner_id,
+                    "created_at": chatbot_created_at,
                 },
                 headers={"Authorization": f"Bearer {st.session_state.access_token}"},
             )
             if response.status_code == 200:
-                st.success("Chatbot created successfully!")
+                print("Chatbot created successfully!")
+                st.session_state.chatbot_id = chatbot_id
+                st.session_state.current_page = "chatbot_edit_page"
             else:
                 st.error(f"Failed to create chatbot: {response.status_code} - {response.text}")
         except Exception as e:
-            st.error(f"Error connecting to the chatbot service: {str(e)}")
-        finally:
-            close_chatbot_form()
+            st.error(f"Error connecting to the chatbot service: {str(e)}")        
+
+
+    def open_profile_page():
+        st.session_state.current_page = "profile_page"
 
     # Button to open the chatbot form, placed above "Your Chatbots"
 
     st.markdown(f"<h3 style='text-align: center;'>Your Chatbots</h2>", unsafe_allow_html=True)
-
-    # Chatbot form (modal)
-    if st.session_state.show_chatbot_form:
-        for k in ["stream", "temperature", "inference_provider"]:
-            st.session_state.new_chatbot_config[k] = None
-        with st.sidebar.container():
-            st.sidebar.header("Create New Chatbot")
-            st.session_state.new_chatbot_name = st.sidebar.text_input("Chatbot Name:", value=st.session_state.new_chatbot_name)
-            st.session_state.new_chatbot_description = st.sidebar.text_input("Chatbot Description:", value=st.session_state.new_chatbot_description)
-            st.session_state.new_chatbot_model_path = st.sidebar.text_input("Chatbot Model Path:", value=st.session_state.new_chatbot_model_path)
-            st.session_state.new_chatbot_config["stream"] = st.sidebar.checkbox("Stream Responses", value=st.session_state.new_chatbot_config["stream"])
-            st.session_state.new_chatbot_config["temperature"] = st.sidebar.slider("Temperature", min_value=0.0, max_value=1.0, value=st.session_state.new_chatbot_config["temperature"], step=0.1)
-            st.session_state.new_chatbot_config["inference_provider"] = st.sidebar.selectbox("Inference Provider", ["ollama", "huggingface"], index=st.session_state.new_chatbot_config["inference_provider"])
-
-            col1, col2 = st.sidebar.columns(2)
-            with col1:
-                st.sidebar.button("Save", on_click=create_chatbot)
-            with col2:
-                st.sidebar.button("Cancel", on_click=close_chatbot_form)
 
     # Retrieve chatbots from the database and display them
     try:
@@ -119,4 +100,4 @@ def landing_page():
     with c1:
         st.button("Edit Profile", on_click=open_profile_page, use_container_width=True)
     with c3:
-        st.button("New Chatbot", on_click=open_chatbot_form, use_container_width=True)
+        st.button("New Chatbot", on_click=create_new_chatbot, use_container_width=True)
