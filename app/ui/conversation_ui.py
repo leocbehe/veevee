@@ -16,7 +16,7 @@ def conversation_page():
             st.session_state.current_page = "chatbot_page"
             st.rerun()
     with c2:
-        st.markdown(f"<h3 style='text-align: center;'>chatting with {st.session_state.chatbot_name}</h1>", unsafe_allow_html=True)    
+        st.markdown(f"<h3 style='text-align: center;'>chatting with {st.session_state.chatbot_name}</h1>", unsafe_allow_html=True)
     
     
     # Initialize conversation history in session state if not exists
@@ -87,6 +87,7 @@ def add_knowledge_base_context(user_prompt_text):
     This is done by checking the similarity of the user's question with the chunk embeddings
     in the knowledge base table, then adding any chunks that have relevant embeddings by 
     integrating the chunk text into the prompt."""
+    print(f"Adding knowledge base context...")
  
     chunks = None
     try:
@@ -117,16 +118,16 @@ def add_knowledge_base_context(user_prompt_text):
         return None
 
     # generate embedding from user prompt
-    user_prompt_embedding = text_to_embedding(user_prompt_text).reshape(1, -1)
+    print(f"user prompt text: {user_prompt_text}")
+    user_prompt_embedding = text_to_embedding(user_prompt_text['content'])
     # sort the chunks by similarity to the user prompt
     chunks = sorted(chunks, key=lambda x: cosine_similarity(np.array(x['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0], reverse=True)
     for chunk in chunks:
         cos_sim = cosine_similarity(np.array(chunk['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0]
         print(f"cos_sim: {cos_sim}")
 
-    print(f"text of top 5 chunks: {[chunk['chunk_text'] for chunk in chunks[:5]]}")
     context_text = [chunk['chunk_text'] for chunk in chunks[:5]]
-    context_message = "Please use the following text as needed in our conversation: \n\n" + "\n\n".join(context_text)
+    context_message = "Please use the following text as needed for context: \n\n" + "\n\n".join(context_text)
 
     return context_message
 
@@ -137,7 +138,6 @@ def generate_response(conversation_history):
     service = LLMService(inference_provider="ollama")
     service.stream = True
 
-    context_message = add_knowledge_base_context(conversation_history)
 
     # huggingface is expecting a list with only "role" and "content" keys, so we need to remove the "conversation_id" and "timestamp" keys
     formatted_conversation_history = [
@@ -148,6 +148,7 @@ def generate_response(conversation_history):
         for message in conversation_history
     ]
     user_prompt = formatted_conversation_history.pop(-1)
+    context_message = add_knowledge_base_context(user_prompt)
     formatted_conversation_history.append({"role": "user", "content": context_message})
     formatted_conversation_history.append(user_prompt)
 

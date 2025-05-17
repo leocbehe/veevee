@@ -119,5 +119,4 @@ def get_document_chunks(document_ids: List[str], db: Session = Depends(get_db), 
     print(f"Received document IDs: {document_ids}")
 
     chunks = db.query(models.DocumentChunk).filter(models.DocumentChunk.document_id.in_(document_ids)).all()
-    print(f"returning chunks: {chunks}")
     return chunks

@@ -2,6 +2,7 @@ import streamlit as st
 from .config import settings
 import os
 import nltk
+import numpy as np
 from nltk.tokenize import sent_tokenize
 from pypdf import PdfReader
 try:
@@ -62,6 +63,7 @@ def load_embedding_model():
     return model
 
 def text_to_embedding(chunk: str):
+    print(f"chunk inside text_to_embedding: {chunk}")
     model = load_embedding_model()
-    embedding = model.encode(chunk)
-    return embedding
+    embedding = np.array(model.encode(chunk))
+    return embedding.reshape(1, -1)
