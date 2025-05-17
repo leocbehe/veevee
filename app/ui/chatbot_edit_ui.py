@@ -75,6 +75,12 @@ def chatbot_edit_page():
         st.session_state.edit_configuration = chatbot_data.get("configuration", {})
     if "edit_is_active" not in st.session_state:
         st.session_state.edit_is_active = chatbot_data.get("is_active", True)
+    if "edit_inference_provider" not in st.session_state:
+        st.session_state.edit_inference_provider = chatbot_data.get("configuration", {}).get("inference_provider", "")
+    if "edit_inference_url" not in st.session_state:
+        st.session_state.edit_inference_url = chatbot_data.get("configuration", {}).get("inference_url", "")
+    if "edit_model_name" not in st.session_state:
+        st.session_state.edit_model_name = chatbot_data.get("configuration", {}).get("model_name", "")
     
     # Form for editing chatbot
     with st.form(key="edit_chatbot_form"):
@@ -82,7 +88,14 @@ def chatbot_edit_page():
         st.text_area("Description", key="edit_description")
         st.text_input("Model Path", key="edit_model_path", 
                      help="Can be a local path or a Hugging Face model name")
-        st.text_input("Model File", key="edit_modelfile")
+        st.text_input("Model File", key="edit_modelfile", help="If using ollama, can be used to specify a custom model file")
+        st.text_input("Inference Provider", key="edit_inference_provider", 
+                     help="The service or framework used for inference such as ollama or huggingface; i.e. where the model is \
+                        actually being run")
+        st.text_input("Inference URL", key="edit_inference_url",
+                     help="URL for the inference API endpoint")
+        st.text_input("Model Name", key="edit_model_name",
+                     help="Name of the model to use for inference")
         
         # Configuration as JSON - more advanced UI could be implemented
         st.subheader("Configuration (JSON)")
@@ -115,6 +128,12 @@ def chatbot_edit_page():
                         st.error("Invalid JSON in configuration field")
                         return
                     
+                    config_dict.update({
+                        "inference_provider": st.session_state.edit_inference_provider,
+                        "inference_url": st.session_state.edit_inference_url,
+                        "model_name": st.session_state.edit_model_name
+                    })
+                    
                     # Prepare update data
                     update_data = {
                         "chatbot_name": st.session_state.edit_chatbot_name,
@@ -132,7 +151,7 @@ def chatbot_edit_page():
                     )
                     
                     if response.status_code == 200:
-                        st.success("Chatbot updated successfully!")
+                        print("Chatbot updated successfully!")
                     else:
                         st.error(f"Failed to update chatbot: {response.status_code} - {response.text}")
                 except Exception as e:
