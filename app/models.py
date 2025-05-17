@@ -68,14 +68,14 @@ class Conversation(Base):
     last_modified = Column(DateTime(timezone=True), nullable=True)
     chatbot = relationship("Chatbot", back_populates="conversations")
     user = relationship("User", back_populates="conversations")
-    messages = relationship("Message", back_populates="conversation")
+    messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan")
 
 
 class Message(Base):
     __tablename__ = "messages"
 
     message_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    conversation_id = Column(UUID(as_uuid=True), ForeignKey("conversations.conversation_id"))
+    conversation_id = Column(UUID(as_uuid=True), ForeignKey("conversations.conversation_id", ondelete="CASCADE"))
     message_text = Column(Text)
     role = Column(String)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())

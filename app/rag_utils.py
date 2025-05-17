@@ -63,7 +63,6 @@ def load_embedding_model():
     return model
 
 def text_to_embedding(chunk: str):
-    print(f"chunk inside text_to_embedding: {chunk}")
     model = load_embedding_model()
     embedding = np.array(model.encode(chunk))
-    return embedding.reshape(1, -1)
+    return embedding

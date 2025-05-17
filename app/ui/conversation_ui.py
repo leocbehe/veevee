@@ -118,13 +118,12 @@ def add_knowledge_base_context(user_prompt_text):
         return None
 
     # generate embedding from user prompt
-    print(f"user prompt text: {user_prompt_text}")
-    user_prompt_embedding = text_to_embedding(user_prompt_text['content'])
+    user_prompt_embedding = text_to_embedding(user_prompt_text['content']).reshape(1, -1)
     # sort the chunks by similarity to the user prompt
     chunks = sorted(chunks, key=lambda x: cosine_similarity(np.array(x['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0], reverse=True)
     for chunk in chunks:
         cos_sim = cosine_similarity(np.array(chunk['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0]
-        print(f"cos_sim: {cos_sim}")
+        print(f"cos_sim: {cos_sim[:20]}")
 
     context_text = [chunk['chunk_text'] for chunk in chunks[:5]]
     context_message = "Please use the following text as needed for context: \n\n" + "\n\n".join(context_text)
