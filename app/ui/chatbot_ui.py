@@ -31,7 +31,7 @@ def chatbot_page():
 
     st.write(f"**Chatbot Name:** {st.session_state.chatbot_name}")
     st.write(f"**Chatbot Description:** {st.session_state.chatbot_description}")
-    st.write(f"**Chatbot Model Path:** {st.session_state.chatbot_model_path}")
+    st.write(f"**Chatbot Model Name:** {st.session_state.chatbot_model_name}")
     st.subheader("Conversations:")
 
     # display all conversations for this chatbot 

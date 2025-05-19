@@ -11,14 +11,14 @@ def landing_page():
         st.session_state.new_chatbot_name = ""
     if "new_chatbot_description" not in st.session_state:
         st.session_state.new_chatbot_description = ""
-    if "new_chatbot_model_path" not in st.session_state:
-        st.session_state.new_chatbot_model_path = ""
+    if "new_chatbot_model_name" not in st.session_state:
+        st.session_state.new_chatbot_model_name = ""
 
     def create_new_chatbot():
         chatbot_id = str(uuid.uuid4())
         chatbot_name = ""
         chatbot_description = ""
-        chatbot_model_path = ""
+        chatbot_model_name = ""
         chatbot_owner_id = st.session_state.user_id
         chatbot_created_at = datetime.now().isoformat()
         try:
@@ -28,7 +28,7 @@ def landing_page():
                     "chatbot_id": chatbot_id,
                     "chatbot_name": chatbot_name,
                     "description": chatbot_description,
-                    "model_path": chatbot_model_path,
+                    "model_name": chatbot_model_name,
                     "owner_id": chatbot_owner_id,
                     "created_at": chatbot_created_at,
                 },
@@ -70,7 +70,7 @@ def landing_page():
                             st.session_state.chatbot_id = chatbot['chatbot_id']
                             st.session_state.chatbot_name = chatbot['chatbot_name']
                             st.session_state.chatbot_description = chatbot['description']
-                            st.session_state.chatbot_model_path = chatbot['model_path']
+                            st.session_state.chatbot_model_name = chatbot['model_name']
                             st.session_state.chatbot_config = {} if not 'configuration' in chatbot else chatbot['configuration']
                             st.session_state.current_page = "chatbot_page"
                             st.rerun()
@@ -79,7 +79,7 @@ def landing_page():
                             st.session_state.chatbot_id = chatbot['chatbot_id']
                             st.session_state.chatbot_name = chatbot['chatbot_name']
                             st.session_state.chatbot_description = chatbot['description']
-                            st.session_state.chatbot_model_path = chatbot['model_path']
+                            st.session_state.chatbot_model_name = chatbot['model_name']
                             st.session_state.chatbot_config = {} if not 'configuration' in chatbot else chatbot['configuration']
                             st.session_state.current_page = "chatbot_edit_page"
                             st.rerun()

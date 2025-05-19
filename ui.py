@@ -28,7 +28,7 @@ def initialize_session_state():
         "chatbot_id",
         "chatbot_name",
         "chatbot_description",
-        "chatbot_model_path",
+        "chatbot_model_name",
         "conversation_id",
         "conversation_description",
         "new_conversation_description",

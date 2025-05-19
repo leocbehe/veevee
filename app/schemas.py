@@ -38,7 +38,7 @@ class ChatbotBase(BaseModel):
     chatbot_id: uuid.UUID
     chatbot_name: str
     description: str
-    model_path: str
+    model_name: str
 
 class Chatbot(ChatbotBase):
     owner_id: uuid.UUID
@@ -56,8 +56,7 @@ class ChatbotCreate(ChatbotBase):
 class ChatbotUpdate(BaseModel):
     chatbot_name: Optional[str] = None
     description: Optional[str] = None
-    model_path: Optional[str] = None
-    modelfile: Optional[str] = None
+    model_name: Optional[str] = None
     configuration: Optional[dict] = None
 
 """RAG document schemas"""
