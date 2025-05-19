@@ -62,7 +62,7 @@ def landing_page():
             if chatbots:
                 for chatbot in chatbots:
                     st.markdown("<hr style='margin-top: 0.5em;'>", unsafe_allow_html=True)
-                    col1, col2, col3 = st.columns([0.7, 0.15, 0.15])
+                    col1, col2, col3, col4 = st.columns([0.7, 0.1, 0.1, 0.1])
                     with col1:
                         st.write(f"- {chatbot['chatbot_name']}")
                     with col2:
@@ -71,13 +71,19 @@ def landing_page():
                             st.session_state.chatbot_name = chatbot['chatbot_name']
                             st.session_state.chatbot_description = chatbot['description']
                             st.session_state.chatbot_model_path = chatbot['model_path']
-                            if 'configuration' in chatbot:
-                                st.session_state.chatbot_config = chatbot['configuration']
-                            else:
-                                st.session_state.chatbot_config = {}
+                            st.session_state.chatbot_config = {} if not 'configuration' in chatbot else chatbot['configuration']
                             st.session_state.current_page = "chatbot_page"
                             st.rerun()
                     with col3:
+                        if st.button(f"Edit", key=f"edit_{chatbot['chatbot_id']}", use_container_width=True):
+                            st.session_state.chatbot_id = chatbot['chatbot_id']
+                            st.session_state.chatbot_name = chatbot['chatbot_name']
+                            st.session_state.chatbot_description = chatbot['description']
+                            st.session_state.chatbot_model_path = chatbot['model_path']
+                            st.session_state.chatbot_config = {} if not 'configuration' in chatbot else chatbot['configuration']
+                            st.session_state.current_page = "chatbot_edit_page"
+                            st.rerun()
+                    with col4:
                         if st.button(f"Delete", key=f"delete_{chatbot['chatbot_id']}", use_container_width=True):
                             response = requests.delete(
                                 f"http://localhost:8000/chatbots/{chatbot['chatbot_id']}",
