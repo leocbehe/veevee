@@ -62,7 +62,7 @@ def landing_page():
             if chatbots:
                 for chatbot in chatbots:
                     st.markdown("<hr style='margin-top: 0.5em;'>", unsafe_allow_html=True)
-                    col1, col2, col3, col4 = st.columns([0.7, 0.1, 0.1, 0.1])
+                    col1, col2, col3, col4 = st.columns([0.55, 0.15, 0.15, 0.15])
                     with col1:
                         st.write(f"- {chatbot['chatbot_name']}")
                     with col2:
