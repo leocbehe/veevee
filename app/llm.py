@@ -12,15 +12,16 @@ class LLMService:
     # Load environment variables from .env file
 
     def __init__(self, 
+                 inference_provider: str,
+                 inference_url: Optional[str] = None,
                  model_name: str = None, 
                  token: Optional[str] = None, 
-                 inference_provider: str = settings.inference_provider, 
-                 inference_url: Optional[str] = "http://127.0.0.1:11434",
                  stream: bool = True,
                  temperature: float = 0.7,
                  max_length: int = 2000,
                  top_p: float = 0.9):
         self.inference_provider = inference_provider if inference_provider else "huggingface"
+        self.inference_url = inference_url if inference_url else settings.inference_url
         self.token = token if token else settings.hf_token
         self.stream = stream
         self.temperature = temperature

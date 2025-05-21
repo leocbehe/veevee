@@ -77,17 +77,20 @@ def chatbot_edit_page():
         st.session_state.edit_inference_provider = chatbot_data.get("configuration", {}).get("inference_provider", "")
     if "edit_inference_url" not in st.session_state:
         st.session_state.edit_inference_url = chatbot_data.get("configuration", {}).get("inference_url", "")
-    if "edit_model_name" not in st.session_state:
-        st.session_state.edit_model_name = chatbot_data.get("configuration", {}).get("model_name", "")
     
     # Form for editing chatbot
     with st.form(key="edit_chatbot_form"):
         st.text_input("Chatbot Name", key="edit_chatbot_name", help="The personalized chatbot name. Has no effect on the model.")
-        st.text_area("Description", key="edit_description")
+        st.text_area("Description", key="edit_description", help="A description of the chatbot. Has no effect on the model.")
         st.text_input("Model Name", key="edit_model_name", 
                      help="Can be an ollama model name or a Hugging Face model name. Must be a valid model name for the specified inference provider.")
-        st.text_input("Inference Provider", key="edit_inference_provider", 
-                     help="The service or framework used for inference such as ollama or huggingface; i.e. where the model is \
+        
+        inference_providers = ["ollama", "huggingface"]
+        st.selectbox("Inference Provider", 
+                    options=inference_providers,
+                    index=0,
+                    key="edit_inference_provider", 
+                    help="The service or framework used for inference such as ollama or huggingface; i.e. where the model is \
                         actually being run")
         st.text_input("Inference URL", key="edit_inference_url",
                      help="URL for the inference API endpoint")
@@ -96,7 +99,7 @@ def chatbot_edit_page():
         st.subheader("Configuration (JSON)")
         config_str = st.text_area("Configuration", 
                                  value=str(st.session_state.edit_configuration),
-                                 height=150, 
+                                 height=120, 
                                  help=""" 
                                     Additional values that can be passed to the model at the time of inference. Current valid keywords include \
                                     temperature, max_length, and top_p. Please see the relevant inference provider's documentation for more \
@@ -126,11 +129,6 @@ def chatbot_edit_page():
                     except json.JSONDecodeError:
                         st.error("Invalid JSON in configuration field")
                         return
-                    
-                    config_dict.update({
-                        "inference_provider": st.session_state.edit_inference_provider,
-                        "inference_url": st.session_state.edit_inference_url,
-                    })
                     
                     # Prepare update data
                     update_data = {
