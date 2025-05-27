@@ -21,6 +21,7 @@ def landing_page():
         chatbot_model_name = ""
         chatbot_owner_id = st.session_state.user_id
         chatbot_created_at = datetime.now().isoformat()
+        chatbot_configuration = {}
         try:
             response = requests.post(
                 "http://localhost:8000/chatbots/",
@@ -31,6 +32,7 @@ def landing_page():
                     "model_name": chatbot_model_name,
                     "owner_id": chatbot_owner_id,
                     "created_at": chatbot_created_at,
+                    "configuration": chatbot_configuration,
                 },
                 headers={"Authorization": f"Bearer {st.session_state.access_token}"},
             )
@@ -41,7 +43,15 @@ def landing_page():
             else:
                 st.error(f"Failed to create chatbot: {response.status_code} - {response.text}")
         except Exception as e:
-            st.error(f"Error connecting to the chatbot service: {str(e)}")        
+            st.error(f"Error connecting to the chatbot service: {str(e)}")       
+            response = requests.delete(
+                "http://localhost:8000/chatbots/{chatbot_id}",
+                headers={"Authorization": f"Bearer {st.session_state.access_token}"},
+            )
+            if response.status_code == 200:
+                print("Reverted changes.")
+            else:
+                print(f"Failed to delete chatbot: {response.status_code} - {response.text}")
 
 
     def open_profile_page():

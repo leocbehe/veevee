@@ -3,46 +3,42 @@ import requests
 from datetime import datetime
 import uuid
 
-def chatbot_edit_page():
+def fetch_chatbot_data(chatbot_id, access_token):
     """
-    Streamlit page for editing chatbot details.
-    Allows users to modify chatbot properties and save changes.
-    """
-    # Check if chatbot_id exists in session state
-    if "chatbot_id" not in st.session_state:
-        st.error("No chatbot selected for editing")
-        if st.button("Return to Chatbots"):
-            st.session_state.current_page = "landing_page"
-            st.rerun()
-        return
+    Fetch chatbot data from the API.
     
-    # Fetch current chatbot data
+    Args:
+        chatbot_id: ID of the chatbot to fetch
+        access_token: Authorization token
+        
+    Returns:
+        dict: Chatbot data or None if error
+    """
     try:
         response = requests.get(
-            f"http://localhost:8000/chatbots/{st.session_state.chatbot_id}",
-            headers={"Authorization": f"Bearer {st.session_state.access_token}"}
+            f"http://localhost:8000/chatbots/{chatbot_id}",
+            headers={"Authorization": f"Bearer {access_token}"}
         )
         
         if response.status_code != 200:
             print(f"No associated chatbot found; chatbot creation may not have executed properly. \
                   {response.status_code} - {response.text}")
-            if st.button("Return to Chatbots"):
-                st.session_state.current_page = "landing_page"
-                st.rerun()
-            return
+            return None
             
-        chatbot_data = response.json()
+        return response.json()
     except Exception as e:
         st.error(f"Error connecting to the chatbot service: {str(e)}")
-        if st.button("Return to Chatbots"):
-            st.session_state.current_page = "landing_page"
-            st.rerun()
-        return
+        return None
+
+def display_chatbot_info(chatbot_data):
+    """
+    Display non-editable chatbot information.
     
-    # Page header
+    Args:
+        chatbot_data: Dictionary containing chatbot information
+    """
     st.title("Chatbot Details")
     
-    # Display non-editable fields
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Chatbot ID")
@@ -58,86 +54,195 @@ def chatbot_edit_page():
         st.subheader("Status")
         status = "Active" if chatbot_data.get("is_active", False) else "Inactive"
         st.text(status)
+
+def render_edit_form(chatbot_data):
+    """
+    Render the editable form for chatbot configuration.
     
-    # Editable fields
+    Args:
+        chatbot_data: Dictionary containing current chatbot data
+        
+    Returns:
+        tuple: (back_button, submit_button, form_data)
+    """
     st.subheader("Editable Information")
     
-    # Initialize session state for form values if not already present
-    st.session_state.edit_chatbot_name = chatbot_data.get("chatbot_name", "")
-    st.session_state.edit_description = chatbot_data.get("description", "")
-    st.session_state.edit_model_name = chatbot_data.get("model_name", "")
-    st.session_state.edit_configuration = chatbot_data.get("configuration", {})
-    st.session_state.edit_is_active = chatbot_data.get("is_active", True)
-    st.session_state.edit_inference_provider = chatbot_data.get("configuration", {}).get("inference_provider", "")
-    st.session_state.edit_inference_url = chatbot_data.get("configuration", {}).get("inference_url", "")
-    st.session_state.temperature = chatbot_data.get("configuration", {}).get("temperature", 0.7)
-    st.session_state.stream = chatbot_data.get("configuration", {}).get("stream", True)
-    
-    # Form for editing chatbot
     with st.form(key="edit_chatbot_form"):
-        st.text_input("Chatbot Name", key="edit_chatbot_name", help="The personalized chatbot name. Has no effect on the model.")
-        st.text_area("Description", key="edit_description", help="A description of the chatbot. Has no effect on the model.")
-        st.text_input("Model Name", key="edit_model_name", 
-                     help="Can be an ollama model name or a Hugging Face model name. Must be a valid model name for the specified inference provider.")
+        chatbot_name = st.text_input("Chatbot Name", 
+                                   value=chatbot_data.get("chatbot_name", ""),
+                                   help="The personalized chatbot name. Has no effect on the model.")
+        description = st.text_area("Description", 
+                                 value=chatbot_data.get("description", ""),
+                                 help="A description of the chatbot. Has no effect on the model.")
+        model_name = st.text_input("Model Name", 
+                                 value=chatbot_data.get("model_name", ""),
+                                 help="Can be an ollama model name or a Hugging Face model name. Must be a valid model name for the specified inference provider.")
         
-        # Configuration as JSON - more advanced UI could be implemented
+        # Configuration section
         st.subheader("Configuration (JSON)")
         inference_providers = ["ollama", "huggingface"]
-        st.selectbox("Inference Provider", 
+        current_provider = chatbot_data.get("configuration", {}).get("inference_provider", "ollama")
+        provider_index = 0 if current_provider == "ollama" else 1
+        
+        inference_provider = st.selectbox("Inference Provider", 
                     options=inference_providers,
-                    index=0,
-                    key="edit_inference_provider", 
+                    index=provider_index,
                     help="The service or framework used for inference such as ollama or huggingface; i.e. where the model is \
                         actually being run")
-        st.text_input("Inference URL", key="edit_inference_url",
-                     help="URL for the inference API endpoint")
-        st.slider("Temperature", min_value=0.0, max_value=1.0, step=0.1, key="temperature")
-        st.checkbox("Stream Responses", key="stream", help="Whether to stream responses from the model or wait until the entire response is generated.")
+        inference_url = st.text_input("Inference URL", 
+                                    value=chatbot_data.get("configuration", {}).get("inference_url", ""),
+                                    help="URL for the inference API endpoint")
+        temperature = st.slider("Temperature", 
+                               min_value=0.0, max_value=1.0, step=0.1, 
+                               value=chatbot_data.get("configuration", {}).get("temperature", 0.7))
+        stream = st.checkbox("Stream Responses", 
+                           value=chatbot_data.get("configuration", {}).get("stream", True),
+                           help="Whether to stream responses from the model or wait until the entire response is generated.")
         
-        st.checkbox("Active", key="edit_is_active")
+        is_active = st.checkbox("Active", value=chatbot_data.get("is_active", True))
         
-        # Active status toggle
-
+        # Form buttons
         col1, col2, col3 = st.columns([1, 2, 1])
         
         with col1:
-            # Button to return to chatbot list
-            if st.form_submit_button("Back to Chatbots", use_container_width=True):
-                st.session_state.current_page = "landing_page"
-                st.rerun()
+            back_button = st.form_submit_button("Back to Chatbots", use_container_width=True)
 
         with col3:    
-            # Submit button
-            submit_button = st.form_submit_button(label="Save Changes", use_container_width=True)    
+            submit_button = st.form_submit_button(label="Save Changes", use_container_width=True)
+    
+    # Return form data
+    form_data = {
+        "chatbot_name": chatbot_name,
+        "description": description,
+        "model_name": model_name,
+        "configuration": {
+            "inference_provider": inference_provider,
+            "inference_url": inference_url,
+            "temperature": temperature,
+            "stream": stream,
+        },
+        "is_active": is_active
+    }
+    
+    return back_button, submit_button, form_data
 
-            if submit_button:
-                try:
-                    # Parse configuration from string to dict
-                    config_dict = {
-                        "inference_provider": st.session_state.edit_inference_provider,
-                        "inference_url": st.session_state.edit_inference_url,
-                        "temperature": st.session_state.temperature,
-                        "stream": st.session_state.stream,
-                    }
-                    
-                    # Prepare update data
-                    update_data = {
-                        "chatbot_name": st.session_state.edit_chatbot_name,
-                        "description": st.session_state.edit_description,
-                        "model_name": st.session_state.edit_model_name,
-                        "configuration": config_dict,
-                    }
-                    
-                    # Send update request
-                    response = requests.patch(
-                        f"http://localhost:8000/chatbots/{st.session_state.chatbot_id}",
-                        json=update_data,
-                        headers={"Authorization": f"Bearer {st.session_state.access_token}"}
-                    )
-                    
-                    if response.status_code == 200:
-                        print("Chatbot updated successfully!")
-                    else:
-                        st.error(f"Failed to update chatbot: {response.status_code} - {response.text}")
-                except Exception as e:
-                    st.error(f"Error updating chatbot: {str(e)}")
+def update_chatbot(chatbot_id, access_token, update_data):
+    """
+    Send PATCH request to update chatbot.
+    
+    Args:
+        chatbot_id: ID of the chatbot to update
+        access_token: Authorization token
+        update_data: Dictionary containing update data
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        print("SENDING UPDATE REQUEST")
+        print(f"chatbot name: {update_data.get('chatbot_name')}")
+        
+        response = requests.patch(
+            f"http://localhost:8000/chatbots/{chatbot_id}",
+            json=update_data,
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        
+        if response.status_code == 200:
+            st.success("Chatbot updated successfully!")
+            print("Chatbot updated successfully!")
+            return True
+        else:
+            st.error(f"Failed to update chatbot: {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        st.error(f"Error updating chatbot: {str(e)}")
+        return False
+
+def refresh_cached_data(chatbot_id, access_token, cache_key):
+    """
+    Refresh cached chatbot data after successful update.
+    
+    Args:
+        chatbot_id: ID of the chatbot
+        access_token: Authorization token
+        cache_key: Session state cache key
+    """
+    try:
+        refresh_response = requests.get(
+            f"http://localhost:8000/chatbots/{chatbot_id}",
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        if refresh_response.status_code == 200:
+            st.session_state[cache_key] = refresh_response.json()
+            st.rerun()
+    except Exception as e:
+        print(f"Error refreshing data after update: {str(e)}")
+
+def handle_navigation_back(cache_key):
+    """
+    Handle navigation back to chatbots list.
+    
+    Args:
+        cache_key: Session state cache key to clear
+    """
+    if cache_key in st.session_state:
+        del st.session_state[cache_key]
+    st.session_state.current_page = "landing_page"
+    st.rerun()
+
+def chatbot_edit_page():
+    """
+    Main function for the chatbot edit page.
+    Orchestrates the entire page flow.
+    """
+    # Check if chatbot_id exists in session state
+    if "chatbot_id" not in st.session_state:
+        st.error("No chatbot selected for editing")
+        if st.button("Return to Chatbots"):
+            st.session_state.current_page = "landing_page"
+            st.rerun()
+        return
+    
+    # Set up caching
+    cache_key = f"chatbot_data_{st.session_state.chatbot_id}"
+    
+    # Fetch chatbot data if not cached
+    if cache_key not in st.session_state:
+        chatbot_data = fetch_chatbot_data(st.session_state.chatbot_id, st.session_state.access_token)
+        if chatbot_data is None:
+            if st.button("Return to Chatbots"):
+                st.session_state.current_page = "landing_page"
+                st.rerun()
+            return
+        st.session_state[cache_key] = chatbot_data
+    
+    chatbot_data = st.session_state[cache_key]
+    
+    # Display chatbot information
+    display_chatbot_info(chatbot_data)
+    
+    # Render edit form
+    back_button, submit_button, form_data = render_edit_form(chatbot_data)
+    
+    # Handle form submissions
+    if back_button:
+        handle_navigation_back(cache_key)
+    
+    if submit_button:
+        print("SUBMIT BUTTON PRESSED")
+        
+        # Prepare update data (exclude is_active from the update for now)
+        update_data = {
+            "chatbot_name": form_data["chatbot_name"],
+            "description": form_data["description"],
+            "model_name": form_data["model_name"],
+            "configuration": form_data["configuration"],
+        }
+        
+        # Update chatbot
+        success = update_chatbot(st.session_state.chatbot_id, st.session_state.access_token, update_data)
+        
+        # Refresh data if successful
+        if success:
+            refresh_cached_data(st.session_state.chatbot_id, st.session_state.access_token, cache_key)

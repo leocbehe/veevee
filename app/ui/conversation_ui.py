@@ -8,16 +8,49 @@ from sklearn.metrics.pairwise import cosine_similarity
 from ..llm import LLMService
 from ..rag_utils import text_to_embedding
 
-def conversation_page():
-
-    c1, c2, c3 = st.columns([1, 5, 1])
-    with c1:
-        if st.button("⬅️"):
+def create_sidebar():
+    """
+    Creates a sidebar with navigation controls and recent message history.
+    """
+    with st.sidebar:
+        st.markdown("### Navigation")
+        if st.button("⬅️ Back to Chatbot", use_container_width=True):
             st.session_state.current_page = "chatbot_page"
             st.rerun()
-    with c2:
-        st.markdown(f"<h3 style='text-align: center;'>chatting with {st.session_state.chatbot_name}</h1>", unsafe_allow_html=True)
+        
+        st.divider()
+        
+        # Optional: Add some conversation info in the sidebar
+        if 'chatbot_name' in st.session_state:
+            st.markdown(f"**Chatbot:** {st.session_state.chatbot_name}")
+        
+        if 'conversation_messages' in st.session_state:
+            message_count = len(st.session_state.conversation_messages)
+            st.markdown(f"**Messages:** {message_count}")
+            
+            # Show recent message history
+            if message_count > 0:
+                st.markdown("**Recent Messages:**")
+                # Get the last 10 messages
+                recent_messages = st.session_state.conversation_messages[-10:]
+                
+                for i, message in enumerate(recent_messages):
+                    # Truncate message to first 20 characters
+                    truncated_text = message['message_text'][:20] + "..." if len(message['message_text']) > 20 else message['message_text']
+                    
+                    # Use different styling for user vs assistant
+                    if message['role'] == 'user':
+                        st.markdown(f"🙋 {truncated_text}")
+                    else:
+                        st.markdown(f"🤖 {truncated_text}")
+
+def conversation_page():
+    # Create the sidebar
+    create_sidebar()
     
+    # Simple header without sticky positioning
+    st.markdown(f"<h2 style='text-align: center;'>Chatting with {st.session_state.chatbot_name}</h2>", unsafe_allow_html=True)
+    st.divider()
     
     # Initialize conversation history in session state if not exists
     if 'conversation_messages' not in st.session_state:
@@ -49,7 +82,6 @@ def conversation_page():
     # main entry point for inference
     if user_input:
         handle_user_input(user_input)
-        
 
 def handle_user_input(user_input):
     """The main function to handle user input and generate chatbot responses."""
