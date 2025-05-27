@@ -121,12 +121,19 @@ def add_knowledge_base_context(user_prompt_text):
     user_prompt_embedding = text_to_embedding(user_prompt_text['content']).reshape(1, -1)
     # sort the chunks by similarity to the user prompt
     chunks = sorted(chunks, key=lambda x: cosine_similarity(np.array(x['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0], reverse=True)
-    for chunk in chunks:
-        cos_sim = cosine_similarity(np.array(chunk['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0]
-        print(f"cos_sim: {cos_sim[:20]}")
 
-    context_text = [chunk['chunk_text'] for chunk in chunks[:5]]
-    context_message = "Please use the following text as needed for context: \n\n" + "\n\n".join(context_text)
+    # for chunk in chunks:
+    #     cos_sim = cosine_similarity(np.array(chunk['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0]
+    #     print(f"cos_sim: {cos_sim}")
+
+    context_text = []
+    # look through the 5 chunks most similar to the user prompt. if the cosine similarity is > 0.5, add the chunk to the context.
+    for chunk in chunks[:5]:
+        if cosine_similarity(np.array(chunk['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0] > 0.5:
+            print(f"Adding chunk to context: {chunk['chunk_text']}")
+            context_text.append(chunk['chunk_text'])
+
+    context_message = "Please use the following text as needed for context: \n\n" + "\n\n".join(context_text) + "\n\nPlease answer the following question using the context provided. If the context is not relevant, please answer the question without it."
 
     return context_message
 
@@ -146,28 +153,36 @@ def generate_response(conversation_history):
         }
         for message in conversation_history
     ]
+
+    # remove the user prompt from the conversation history and use it to generate the context message.
+    # then add the context message and the user prompt back into the conversation history (in that order)
     user_prompt = formatted_conversation_history.pop(-1)
     context_message = add_knowledge_base_context(user_prompt)
     formatted_conversation_history.append({"role": "user", "content": context_message})
     formatted_conversation_history.append(user_prompt)
 
     response_generator = service.generate(formatted_conversation_history)
-
-    full_response = ""
-    response_placeholder = st.empty() 
-
-    if service.inference_provider == "ollama":
-        for chunk in response_generator:
-            full_response += chunk.message.content
-            response_placeholder.markdown(full_response + "▌")  # Display the updated response with a cursor
-        response_placeholder.markdown(full_response)  # Final response without cursor
-        return full_response
+    print(f"response_generator type: {type(response_generator)}")
+    if not response_generator:
+        print("Failed to initialize the LLM service properly. Please check your configuration.")
+        return None
     else:
-        for chunk in response_generator:
-            full_response += chunk.choices[0].delta.content if chunk.choices[0].delta.content else ""
-            response_placeholder.markdown(full_response + "▌")  # Display the updated response with a cursor
-        response_placeholder.markdown(full_response)  # Final response without cursor
-        return full_response
+        full_response = ""
+        response_placeholder = st.empty() 
+
+        if service.inference_provider == "ollama":
+            for chunk in response_generator:
+                print(f"chunk type: {type(chunk)}")
+                full_response += chunk.message.content
+                response_placeholder.markdown(full_response + "▌")  # Display the updated response with a cursor
+            response_placeholder.markdown(full_response)  # Final response without cursor
+            return full_response
+        else:
+            for chunk in response_generator:
+                full_response += chunk.choices[0].delta.content if chunk.choices[0].delta.content else ""
+                response_placeholder.markdown(full_response + "▌")  # Display the updated response with a cursor
+            response_placeholder.markdown(full_response)  # Final response without cursor
+            return full_response
 
 
 def create_conversation():

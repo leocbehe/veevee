@@ -63,20 +63,15 @@ def chatbot_edit_page():
     st.subheader("Editable Information")
     
     # Initialize session state for form values if not already present
-    if "edit_chatbot_name" not in st.session_state:
-        st.session_state.edit_chatbot_name = chatbot_data.get("chatbot_name", "")
-    if "edit_description" not in st.session_state:
-        st.session_state.edit_description = chatbot_data.get("description", "")
-    if "edit_model_name" not in st.session_state:
-        st.session_state.edit_model_name = chatbot_data.get("model_name", "")
-    if "edit_configuration" not in st.session_state:
-        st.session_state.edit_configuration = chatbot_data.get("configuration", {})
-    if "edit_is_active" not in st.session_state:
-        st.session_state.edit_is_active = chatbot_data.get("is_active", True)
-    if "edit_inference_provider" not in st.session_state:
-        st.session_state.edit_inference_provider = chatbot_data.get("configuration", {}).get("inference_provider", "")
-    if "edit_inference_url" not in st.session_state:
-        st.session_state.edit_inference_url = chatbot_data.get("configuration", {}).get("inference_url", "")
+    st.session_state.edit_chatbot_name = chatbot_data.get("chatbot_name", "")
+    st.session_state.edit_description = chatbot_data.get("description", "")
+    st.session_state.edit_model_name = chatbot_data.get("model_name", "")
+    st.session_state.edit_configuration = chatbot_data.get("configuration", {})
+    st.session_state.edit_is_active = chatbot_data.get("is_active", True)
+    st.session_state.edit_inference_provider = chatbot_data.get("configuration", {}).get("inference_provider", "")
+    st.session_state.edit_inference_url = chatbot_data.get("configuration", {}).get("inference_url", "")
+    st.session_state.temperature = chatbot_data.get("configuration", {}).get("temperature", 0.7)
+    st.session_state.stream = chatbot_data.get("configuration", {}).get("stream", True)
     
     # Form for editing chatbot
     with st.form(key="edit_chatbot_form"):
@@ -85,6 +80,8 @@ def chatbot_edit_page():
         st.text_input("Model Name", key="edit_model_name", 
                      help="Can be an ollama model name or a Hugging Face model name. Must be a valid model name for the specified inference provider.")
         
+        # Configuration as JSON - more advanced UI could be implemented
+        st.subheader("Configuration (JSON)")
         inference_providers = ["ollama", "huggingface"]
         st.selectbox("Inference Provider", 
                     options=inference_providers,
@@ -94,19 +91,12 @@ def chatbot_edit_page():
                         actually being run")
         st.text_input("Inference URL", key="edit_inference_url",
                      help="URL for the inference API endpoint")
+        st.slider("Temperature", min_value=0.0, max_value=1.0, step=0.1, key="temperature")
+        st.checkbox("Stream Responses", key="stream", help="Whether to stream responses from the model or wait until the entire response is generated.")
         
-        # Configuration as JSON - more advanced UI could be implemented
-        st.subheader("Configuration (JSON)")
-        config_str = st.text_area("Configuration", 
-                                 value=str(st.session_state.edit_configuration),
-                                 height=120, 
-                                 help=""" 
-                                    Additional values that can be passed to the model at the time of inference. Current valid keywords include \
-                                    temperature, max_length, and top_p. Please see the relevant inference provider's documentation for more \
-                                    details on these options.""")
+        st.checkbox("Active", key="edit_is_active")
         
         # Active status toggle
-        st.checkbox("Active", key="edit_is_active")
 
         col1, col2, col3 = st.columns([1, 2, 1])
         
@@ -123,12 +113,12 @@ def chatbot_edit_page():
             if submit_button:
                 try:
                     # Parse configuration from string to dict
-                    try:
-                        import json
-                        config_dict = json.loads(config_str.replace("'", "\"")) if config_str.strip() else {}
-                    except json.JSONDecodeError:
-                        st.error("Invalid JSON in configuration field")
-                        return
+                    config_dict = {
+                        "inference_provider": st.session_state.edit_inference_provider,
+                        "inference_url": st.session_state.edit_inference_url,
+                        "temperature": st.session_state.temperature,
+                        "stream": st.session_state.stream,
+                    }
                     
                     # Prepare update data
                     update_data = {

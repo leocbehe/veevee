@@ -21,6 +21,9 @@ def get_chatbot(chatbot_id, db = Depends(get_db), current_user=Depends(oauth2_sc
     chatbot = db.query(models.Chatbot).filter(models.Chatbot.chatbot_id == chatbot_id).first()
     if not chatbot:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chatbot not found")
+    print(f"chatbot type: {type(chatbot)}")
+    print(f"chatbot configuration: {chatbot.configuration}")
+    print(f"chatbot: {chatbot}")
     return chatbot
 
 @router.post("/", response_model=schemas.Chatbot)
@@ -37,6 +40,7 @@ def update_chatbot(chatbot_id, chatbot: schemas.ChatbotUpdate, db = Depends(get_
     if not db_chatbot:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chatbot not found")
     for key, value in chatbot.model_dump(exclude_unset=True).items():
+        print(f"key: {key}, value: {value}")
         setattr(db_chatbot, key, value)
     db.commit()
     db.refresh(db_chatbot)

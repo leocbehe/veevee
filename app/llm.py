@@ -1,10 +1,12 @@
 # app/llm.py
 import sys
-from typing import Optional
+from typing import Optional, Iterator
 from .config import settings
 
 from huggingface_hub import InferenceClient
 from ollama import Client as OllamaClient
+from ollama import ChatResponse
+from collections.abc import Iterator
 
 
 class LLMService:
@@ -14,7 +16,7 @@ class LLMService:
     def __init__(self, 
                  inference_provider: str,
                  inference_url: Optional[str] = None,
-                 model_name: str = None, 
+                 model_name: Optional[str] = None, 
                  token: Optional[str] = None, 
                  stream: bool = True,
                  temperature: float = 0.7,
@@ -33,10 +35,12 @@ class LLMService:
         if inference_provider == "ollama":
             self.model_name = model_name if model_name else settings.default_ollama_model
             self.client = OllamaClient(host=inference_url)
-        else:
+        elif inference_provider == "huggingface":
             # default case is to use huggingface inference.
             self.model_name = model_name if model_name else settings.default_hf_model
-            self.client = InferenceClient(provider=inference_provider, model=self.model_name, token=self.token)
+            self.client = InferenceClient(provider="hf-inference", model=self.model_name, token=self.token)
+        else:
+            raise ValueError("Invalid inference provider")
 
     def generate(self, prompt):
         """
@@ -52,8 +56,10 @@ class LLMService:
         Returns:
             ChatCompletionOutput: The generated response from the LLM.
         """
-        if self.inference_provider == "ollama":
+        if type(self.client) == OllamaClient:
             try:
+                # this is temporary until i find a better workaround- otherwise, pylance will complain that self.client might be InferenceClient, which doesn't have a chat method,
+                # and vice versa for OllamaClient.
                 response = self.client.chat(
                     model=self.model_name,
                     messages=prompt, 
@@ -68,7 +74,7 @@ class LLMService:
             except Exception as e:
                 print(f"Error generating response: {e}")
                 return None
-        else:
+        elif type(self.client) == InferenceClient:
             try:
                 response = self.client.chat_completion(
                     messages=prompt,

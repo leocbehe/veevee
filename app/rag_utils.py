@@ -7,7 +7,7 @@ from nltk.tokenize import sent_tokenize
 from pypdf import PdfReader
 try:
     nltk.data.find('tokenizers/punkt')
-except nltk.downloader.DownloadError:
+except Exception:
     nltk.download('punkt')
     nltk.download('punkt_tab')
 
