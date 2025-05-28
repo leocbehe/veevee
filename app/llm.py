@@ -14,7 +14,7 @@ class LLMService:
     # Load environment variables from .env file
 
     def __init__(self, 
-                 inference_provider: str,
+                 inference_provider: Optional[str] = None,
                  inference_url: Optional[str] = None,
                  model_name: Optional[str] = None, 
                  token: Optional[str] = None, 
@@ -29,6 +29,7 @@ class LLMService:
         self.temperature = temperature
         self.max_length = max_length
         self.top_p = top_p
+        print(f"inference_provider: {inference_provider}")
         if not token:
             print("""WARNING: no token provided. This may cause an error when attempting to 
                   run inference from a remote or third-party provider.""", file=sys.stderr)
@@ -38,7 +39,7 @@ class LLMService:
         elif inference_provider == "huggingface":
             # default case is to use huggingface inference.
             self.model_name = model_name if model_name else settings.default_hf_model
-            self.client = InferenceClient(provider="hf-inference", model=self.model_name, token=self.token)
+            self.client = InferenceClient(model=self.model_name, token=self.token, timeout=60)
         else:
             raise ValueError("Invalid inference provider")
 
@@ -72,10 +73,13 @@ class LLMService:
                 )
                 return response
             except Exception as e:
-                print(f"Error generating response: {e}")
+                print(f"Error generating response from ollama: {e}")
                 return None
         elif type(self.client) == InferenceClient:
             try:
+                from pprint import pprint
+                print("PROMPT:")
+                pprint(prompt)
                 response = self.client.chat_completion(
                     messages=prompt,
                     max_tokens=self.max_length,
@@ -85,5 +89,5 @@ class LLMService:
                 )   
                 return response
             except Exception as e:
-                print(f"Error generating response: {e}")
+                print(f"Error generating response from huggingface: {e}")
                 return None

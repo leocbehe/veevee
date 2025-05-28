@@ -16,6 +16,7 @@ def create_sidebar():
         st.markdown("### Navigation")
         if st.button("⬅️ Back to Chatbot", use_container_width=True):
             st.session_state.current_page = "chatbot_page"
+            st.session_state.conversation_messages = []
             st.rerun()
         
         st.divider()
@@ -146,7 +147,7 @@ def add_knowledge_base_context(user_prompt_text):
         st.error(f"Error connecting to FastAPI route: {e}")
 
     if not chunks:
-        st.write("No chunks found in the knowledge base.")
+        print("No chunks found in the knowledge base.")
         return None
 
     # generate embedding from user prompt
@@ -172,10 +173,8 @@ def add_knowledge_base_context(user_prompt_text):
 
 
 def generate_response(conversation_history):
-    # Initialize the LLM service    
-    service = LLMService(inference_provider="ollama")
-    service.stream = True
-
+    # Initialize the LLM service
+    service = LLMService(inference_provider=st.session_state.chatbot_config['inference_provider'], model_name=st.session_state.chatbot_model_name)
 
     # huggingface is expecting a list with only "role" and "content" keys, so we need to remove the "conversation_id" and "timestamp" keys
     formatted_conversation_history = [
@@ -190,7 +189,8 @@ def generate_response(conversation_history):
     # then add the context message and the user prompt back into the conversation history (in that order)
     user_prompt = formatted_conversation_history.pop(-1)
     context_message = add_knowledge_base_context(user_prompt)
-    formatted_conversation_history.append({"role": "user", "content": context_message})
+    if context_message:
+        formatted_conversation_history.append({"role": "user", "content": context_message})
     formatted_conversation_history.append(user_prompt)
 
     response_generator = service.generate(formatted_conversation_history)
@@ -204,7 +204,6 @@ def generate_response(conversation_history):
 
         if service.inference_provider == "ollama":
             for chunk in response_generator:
-                print(f"chunk type: {type(chunk)}")
                 full_response += chunk.message.content
                 response_placeholder.markdown(full_response + "▌")  # Display the updated response with a cursor
             response_placeholder.markdown(full_response)  # Final response without cursor
