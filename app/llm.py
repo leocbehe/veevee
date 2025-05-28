@@ -21,20 +21,15 @@ class LLMService:
                  stream: bool = True,
                  temperature: float = 0.7,
                  max_response_tokens: int = 2000,
+                 system_context_allowed: bool = False,
                  top_p: float = 0.9):
-        print(f"inference_provider: {inference_provider}")
-        print(f"inference_url: {inference_url}")
-        print(f"token: {token}")
-        print(f"stream: {stream}")
-        print(f"temperature: {temperature}")
-        print(f"max_response_tokens: {max_response_tokens}")
-        print(f"top_p: {top_p}")
         self.inference_provider = inference_provider
         self.token = token if token else settings.hf_token
         self.inference_url = inference_url
         self.stream = stream
         self.temperature = temperature
         self.max_response_tokens = max_response_tokens
+        self.system_context_allowed = system_context_allowed
         self.top_p = top_p
         print(f"inference_provider: {inference_provider}")
         if not token:

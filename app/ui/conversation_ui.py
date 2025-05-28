@@ -115,8 +115,8 @@ def handle_user_input(user_input):
     # Rerun to refresh the page and show new messages
     st.rerun()
 
-def add_knowledge_base_context(user_prompt_text):
-    """Adds context from the knowledge base based on the user's prompt.
+def generate_knowledge_base_context(user_prompt_text):
+    """Generates context from the knowledge base based on the user's prompt.
     This is done by checking the similarity of the user's question with the chunk embeddings
     in the knowledge base table, then adding any chunks that have relevant embeddings by 
     integrating the chunk text into the prompt."""
@@ -155,10 +155,6 @@ def add_knowledge_base_context(user_prompt_text):
     # sort the chunks by similarity to the user prompt
     chunks = sorted(chunks, key=lambda x: cosine_similarity(np.array(x['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0], reverse=True)
 
-    # for chunk in chunks:
-    #     cos_sim = cosine_similarity(np.array(chunk['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0]
-    #     print(f"cos_sim: {cos_sim}")
-
     context_text = []
     # look through the 5 chunks most similar to the user prompt. if the cosine similarity is > 0.5, add the chunk to the context.
     for chunk in chunks[:5]:
@@ -166,10 +162,26 @@ def add_knowledge_base_context(user_prompt_text):
             print(f"Adding chunk to context: {chunk['chunk_text']}")
             context_text.append(chunk['chunk_text'])
 
-    context_message = "Please use the following text as needed for context: \n\n" + "\n\n".join(context_text) + "\n\nPlease answer the following question using the context provided. If the context is not relevant, please answer the question without it."
+    context_message = "\n\n".join(context_text)
 
     return context_message
 
+def add_context_to_conversation(conversation_history, context_message, use_system_role=False):
+    """Adds the specified context message to the conversation history based on the model's formatting requirements."""
+    if use_system_role:
+        # create a system message that includes the given context message and explains to the system that it should use the context as necessary
+        full_system_prompt = f"You are a helpful assistant. When responding to the user, you should refer to the following context as necessary to help you answer the user's question. \
+            START OF CONTEXT:\n\n{context_message}\n\nEND OF CONTEXT.\n\nIf the context is not necessary to answer the user's question, you should ignore the context. If the context is necessary, \
+            incorporate it into your response in a clear and natural way while still using your own words. In all cases, do not explicitly state that you are using the context."
+        # prepend the system message to the conversation history
+        conversation_history.insert(0, {"role": "system", "content": full_system_prompt})
+    else:
+        # create a user message that includes the given context message
+        full_context_prompt = f"Please respond to my next message by referring to this context. START OF CONTEXT:\n\n{context_message}\n\nEND OF CONTEXT\n\nNow, please respond to my \
+            next message by using that context as necessary. If the context is not necessary, you should ignore the context and answer as normal. Either way, respond without explicitly \
+            mentioning the context."
+        # Add the context message as a user message
+        conversation_history.append({"role": "user", "content": full_context_prompt})
 
 
 def generate_response(conversation_history):
@@ -188,9 +200,9 @@ def generate_response(conversation_history):
     # remove the user prompt from the conversation history and use it to generate the context message.
     # then add the context message and the user prompt back into the conversation history (in that order)
     user_prompt = formatted_conversation_history.pop(-1)
-    context_message = add_knowledge_base_context(user_prompt)
+    context_message = generate_knowledge_base_context(user_prompt)
     if context_message:
-        formatted_conversation_history.append({"role": "user", "content": context_message})
+        add_context_to_conversation(formatted_conversation_history, context_message, use_system_role=service.system_context_allowed)
     formatted_conversation_history.append(user_prompt)
 
     response_generator = service.generate(formatted_conversation_history)

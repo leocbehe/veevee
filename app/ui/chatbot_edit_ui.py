@@ -102,6 +102,11 @@ def render_edit_form(chatbot_data):
         stream = st.checkbox("Stream Responses", 
                            value=chatbot_data.get("configuration", {}).get("stream", True),
                            help="Whether to stream responses from the model or wait until the entire response is generated.")
+        system_context_allowed = st.checkbox("System Context Allowed", value=chatbot_data.get("configuration", {}).get("system_context_allowed", False),
+                                             help="""Only enable this if the model being used supports the "system" role in its prompt format. If enabled, any additional context 
+                                             retrieved from the chatbot's knowledge base will be added to a "system" message at the beginning of the conversation. Otherwise, the context
+                                             will just be added as an additional user message. Providing the context as a system message is generally more effective, as the system role
+                                             is specifically designed to provide background context and behavioral instructions to the model.""")
         
         is_active = st.checkbox("Active", value=chatbot_data.get("is_active", True))
         
@@ -125,6 +130,7 @@ def render_edit_form(chatbot_data):
             "temperature": temperature,
             "stream": stream,
             "max_response_tokens": max_response_tokens,
+            "system_context_allowed": system_context_allowed,
         },
         "is_active": is_active
     }
