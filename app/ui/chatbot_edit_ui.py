@@ -37,23 +37,25 @@ def display_chatbot_info(chatbot_data):
     Args:
         chatbot_data: Dictionary containing chatbot information
     """
-    st.title("Chatbot Details")
+    # Center the main title
+    st.markdown("<h1 style='text-align: center;'>Chatbot Details</h1>", unsafe_allow_html=True)
     
+    # Use full width for the subheaders with center-justified text
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("Chatbot ID")
-        st.text(chatbot_data.get("chatbot_id", "N/A"))
+        st.markdown("<h3 style='text-align: center;'>Chatbot ID</h3>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align: center;'>{chatbot_data.get('chatbot_id', 'N/A')}</p>", unsafe_allow_html=True)
         
-        st.subheader("Owner ID")
-        st.text(chatbot_data.get("owner_id", "N/A"))
+        st.markdown("<h3 style='text-align: center;'>Owner ID</h3>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align: center;'>{chatbot_data.get('owner_id', 'N/A')}</p>", unsafe_allow_html=True)
     
     with col2:
-        st.subheader("Created At")
-        st.text(chatbot_data.get("created_at", "N/A"))
+        st.markdown("<h3 style='text-align: center;'>Created At</h3>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align: center;'>{chatbot_data.get('created_at', 'N/A')}</p>", unsafe_allow_html=True)
         
-        st.subheader("Status")
+        st.markdown("<h3 style='text-align: center;'>Status</h3>", unsafe_allow_html=True)
         status = "Active" if chatbot_data.get("is_active", False) else "Inactive"
-        st.text(status)
+        st.markdown(f"<p style='text-align: center;'>{status}</p>", unsafe_allow_html=True)
 
 def render_edit_form(chatbot_data):
     """

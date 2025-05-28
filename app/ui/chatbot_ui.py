@@ -14,7 +14,7 @@ def chatbot_page():
         st.session_state.conversation_id = create_conversation()
         st.session_state.current_page = "conversation_page"
 
-    h1, h2, h3, h4 = st.columns([0.25, 0.25, 0.25, 0.25])
+    h1, h2, h3 = st.columns([0.3, 0.4, 0.3])
     with h1:
         if st.button("Back", use_container_width=True):
             st.session_state.current_page = "landing_page"
@@ -22,16 +22,13 @@ def chatbot_page():
     with h2:
         st.button("New Conversation", on_click=open_new_conversation, use_container_width=True)
     with h3:
-        if st.button("Edit Chatbot", use_container_width=True):
-            pass
-    with h4:
         if st.button("Knowledge Base", use_container_width=True):
             st.session_state.current_page = "knowledge_base_page"
             st.rerun()
 
     st.write(f"**Chatbot Name:** {st.session_state.chatbot_name}")
-    st.write(f"**Chatbot Description:** {st.session_state.chatbot_description}")
     st.write(f"**Chatbot Model Name:** {st.session_state.chatbot_model_name}")
+    st.write(f"**Chatbot Description:** {st.session_state.chatbot_description}")
     st.subheader("Conversations:")
 
     # display all conversations for this chatbot 
