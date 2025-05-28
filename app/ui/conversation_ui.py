@@ -203,6 +203,8 @@ def generate_response(conversation_history):
     context_message = generate_knowledge_base_context(user_prompt)
     if context_message:
         add_context_to_conversation(formatted_conversation_history, context_message, use_system_role=service.system_context_allowed)
+    elif service.system_context_allowed:
+        formatted_conversation_history.insert(0, {"role": "system", "content": "You are a helpful assistant."})
     formatted_conversation_history.append(user_prompt)
 
     response_generator = service.generate(formatted_conversation_history)
