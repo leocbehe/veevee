@@ -20,21 +20,21 @@ class LLMService:
                  token: Optional[str] = None, 
                  stream: bool = True,
                  temperature: float = 0.7,
-                 max_length: int = 2000,
+                 max_response_tokens: int = 2000,
                  top_p: float = 0.9):
         print(f"inference_provider: {inference_provider}")
         print(f"inference_url: {inference_url}")
         print(f"token: {token}")
         print(f"stream: {stream}")
         print(f"temperature: {temperature}")
-        print(f"max_length: {max_length}")
+        print(f"max_response_tokens: {max_response_tokens}")
         print(f"top_p: {top_p}")
         self.inference_provider = inference_provider
         self.token = token if token else settings.hf_token
         self.inference_url = inference_url
         self.stream = stream
         self.temperature = temperature
-        self.max_length = max_length
+        self.max_response_tokens = max_response_tokens
         self.top_p = top_p
         print(f"inference_provider: {inference_provider}")
         if not token:
@@ -57,7 +57,7 @@ class LLMService:
         Args:
             prompt (List[Dict]): The prompt to send to the LLM. If no chat history is provided, this should be a list of length one, with 
             the current user input message as the first element.
-            max_length (int): The maximum length of the generated response.
+            max_response_tokens (int): The maximum length of the generated response.
             temperature (float): The temperature to use for sampling.
             top_p (float): The top_p value to use for sampling.
 
@@ -75,7 +75,7 @@ class LLMService:
                     options={
                         "temperature": self.temperature,
                         "top_p": self.top_p,
-                        "num_predict": self.max_length,
+                        "num_predict": self.max_response_tokens,
                     }
                 )
                 return response
@@ -89,7 +89,7 @@ class LLMService:
                 pprint(prompt)
                 response = self.client.chat_completion(
                     messages=prompt,
-                    max_tokens=self.max_length,
+                    max_tokens=self.max_response_tokens,
                     temperature=self.temperature,
                     stream=self.stream,
                     top_p=self.top_p
