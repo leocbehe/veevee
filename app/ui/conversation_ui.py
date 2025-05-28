@@ -46,13 +46,6 @@ def create_sidebar():
                         st.markdown(f"🤖 {truncated_text}")
 
 def conversation_page():
-    # Create the sidebar
-    create_sidebar()
-    
-    # Simple header without sticky positioning
-    st.markdown(f"<h2 style='text-align: center;'>Chatting with {st.session_state.chatbot_name}</h2>", unsafe_allow_html=True)
-    st.divider()
-    
     # Initialize conversation history in session state if not exists
     if 'conversation_messages' not in st.session_state:
         st.session_state.conversation_messages = []
@@ -69,7 +62,14 @@ def conversation_page():
             st.write(f"Error fetching conversation data: {response.status_code}")
     except Exception as e:
         st.write(f"Error fetching conversation data: {e}")
+
+    # Create the sidebar
+    create_sidebar()
     
+    # Simple header without sticky positioning
+    st.markdown(f"<h2 style='text-align: center;'>Chatting with {st.session_state.chatbot_name}</h2>", unsafe_allow_html=True)
+    st.divider()
+        
     # Display conversation history
     for message in st.session_state.conversation_messages:
         if message['role'] == 'user':
@@ -174,7 +174,7 @@ def add_knowledge_base_context(user_prompt_text):
 
 def generate_response(conversation_history):
     # Initialize the LLM service
-    service = LLMService(inference_provider=st.session_state.chatbot_config['inference_provider'], model_name=st.session_state.chatbot_model_name)
+    service = LLMService(model_name=st.session_state.chatbot_model_name, **st.session_state.chatbot_config)
 
     # huggingface is expecting a list with only "role" and "content" keys, so we need to remove the "conversation_id" and "timestamp" keys
     formatted_conversation_history = [
