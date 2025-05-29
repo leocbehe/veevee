@@ -129,7 +129,6 @@ def knowledge_base_page():
         if st.button("Save"):
             delete_cache()
             for document in st.session_state.new_documents:
-                print(f"in new documents: {document}")
                 if document["file_name"] in [ d["file_name"] for d in st.session_state.uploaded_documents ]:
                     print(f"skipping {document['file_name']} because it already exists")
                     continue
@@ -153,4 +152,5 @@ def knowledge_base_page():
                     },
                 )
             del st.session_state.uploaded_documents
+            del st.session_state.new_documents
             st.rerun()

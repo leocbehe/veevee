@@ -38,6 +38,7 @@ def delete_cache():
         os.remove(os.path.join(cache_dir, file_name))
 
 def chunk_text(text: str, chunk_size: int = 1000):
+    print("tokenizing text...")
     sentences = sent_tokenize(text)
     chunks = []
     current_chunk = ""
@@ -48,11 +49,13 @@ def chunk_text(text: str, chunk_size: int = 1000):
             current_chunk += sentence + " "
         else:
             if current_chunk:
+                print(f"appending chunk: {current_chunk}")
                 chunks.append(current_chunk.strip())
             current_chunk = previous_sentence + " " + sentence + " "
         previous_sentence = sentence
 
     if current_chunk:
+        print(f"appending chunk: {current_chunk}")
         chunks.append(current_chunk.strip())
     return chunks
 

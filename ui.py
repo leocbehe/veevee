@@ -126,7 +126,7 @@ else:
     with st.form("login_form"):
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
-        button1, button2, _ = st.columns([0.12, 0.18, 0.7], border=False)
+        button1, button2 = st.columns([0.5, 0.5], border=False)
         with button1:
             submit_button = st.form_submit_button("Login")
             if submit_button:
