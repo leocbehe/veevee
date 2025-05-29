@@ -97,7 +97,7 @@ def render_edit_form(chatbot_data):
         max_response_tokens = st.number_input("Max Response Tokens", min_value=1, max_value=50000, step=1, value=chatbot_data.get("configuration", {}).get("max_response_tokens", 1000), 
                                      help="The maximum number of tokens that the model can produce in a single response.")
         temperature = st.slider("Temperature", 
-                               min_value=0.0, max_value=1.0, step=0.1, 
+                               min_value=0.0, max_value=2.0, step=0.1, 
                                value=chatbot_data.get("configuration", {}).get("temperature", 0.7))
         stream = st.checkbox("Stream Responses", 
                            value=chatbot_data.get("configuration", {}).get("stream", True),
