@@ -50,6 +50,9 @@ def initialize_session_state():
     if "new_chatbot_config" not in st.session_state:
         st.session_state.new_chatbot_config = {}
 
+    if "page_load" not in st.session_state:
+        st.session_state.page_load = False
+
 def login():
     try:
         response = requests.post(
@@ -119,6 +122,7 @@ if 'access_token' in st.session_state and st.session_state.access_token and is_t
         profile_ui.profile_page()
     elif st.session_state.current_page == "chatbot_edit_page":
         chatbot_edit_ui.chatbot_edit_page()
+    st.session_state.page_load = True
 else:
     st.markdown("<h1 style='text-align: center;'>VeeVee UI</h1>", unsafe_allow_html=True)
     st.warning("Warning: Refreshing the page will log you out!")

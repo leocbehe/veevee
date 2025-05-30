@@ -117,3 +117,5 @@ def landing_page():
         st.button("Edit Profile", on_click=open_profile_page, use_container_width=True)
     with c3:
         st.button("New Chatbot", on_click=create_new_chatbot, use_container_width=True)
+
+    st.session_state.page_load = False

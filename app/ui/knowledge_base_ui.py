@@ -123,11 +123,12 @@ def knowledge_base_page():
     with col1:
         if st.button("Back to Chatbot Page", use_container_width=True):
             del st.session_state.uploaded_documents
+            del st.session_state.new_documents
+            delete_cache()
             st.session_state.current_page = "chatbot_page"
             st.rerun()
     with col2:
         if st.button("Save"):
-            delete_cache()
             for document in st.session_state.new_documents:
                 if document["file_name"] in [ d["file_name"] for d in st.session_state.uploaded_documents ]:
                     print(f"skipping {document['file_name']} because it already exists")
@@ -151,6 +152,10 @@ def knowledge_base_page():
                         "Authorization": f"Bearer {st.session_state.access_token}"
                     },
                 )
+            
+            delete_cache()
             del st.session_state.uploaded_documents
             del st.session_state.new_documents
             st.rerun()
+
+    st.session_state.page_load = False

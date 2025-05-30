@@ -96,6 +96,8 @@ def context_edit_page():
     if st.session_state.get("show_summary", False):
         render_popup_summary(st.session_state.summary_generator)
 
+    st.session_state.page_load = False
+
 
 def update_context(document_id: uuid.UUID, new_context: str):
     """

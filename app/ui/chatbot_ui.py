@@ -14,6 +14,17 @@ def chatbot_page():
         st.session_state.conversation_id = create_conversation()
         st.session_state.current_page = "conversation_page"
 
+    def format_start_time(start_time_str):
+        """Format the start time to a readable format: Month Day, Time"""
+        try:
+            # Parse the datetime string
+            dt = datetime.datetime.fromisoformat(start_time_str.replace('Z', '+00:00'))
+            # Format as "Jan 15, 2:30 PM"
+            return dt.strftime("%b %d, %I:%M %p")
+        except:
+            # If parsing fails, return the original string
+            return start_time_str
+
     h1, h2, h3 = st.columns([0.3, 0.4, 0.3])
     with h1:
         if st.button("Back", use_container_width=True):
@@ -41,33 +52,30 @@ def chatbot_page():
         if response.status_code == 200:
             conversations = response.json()
             if conversations:
-                a1,a2,a3,a4,a5 = st.columns([0.2, 0.2, 0.2, 0.2, 0.2], border=True)
+                a1,a2,a3,a4 = st.columns([0.2, 0.3, 0.3, 0.2], border=False)
+                st.divider()
                 with a1:
-                    st.write("Conversation ID")
+                    st.html("<div style='text-align: center; border-right: 1px solid #ccc; padding-right: 10px;'>Description</div>")
                 with a2:
-                    st.write("Description")
+                    st.html("<div style='text-align: center; border-right: 1px solid #ccc; padding-right: 10px;'>Start Time</div>")
                 with a3:
-                    st.write("Start Time")
+                    st.html("<div style='text-align: center; border-right: 1px solid #ccc; padding-right: 10px;'>Select</div>")
                 with a4:
-                    st.write("Select")
-                with a5:
-                    st.write("Delete")
+                    st.html("<div style='text-align: center;'>Delete</div>")
                 for conversation in conversations:
-                    c1,c2,c3,c4,c5 = st.columns([0.2, 0.2, 0.2, 0.2, 0.2], border=True)
+                    c1,c2,c3,c4 = st.columns([0.2, 0.3, 0.3, 0.2], border=False)
                     with c1:
-                        st.write("..."+str(conversation['conversation_id'])[-8:])
+                        st.html(f"<div style='text-align: center;'>{conversation['description']}</div>")
                     with c2:
-                        st.write(conversation['description'])
+                        st.html(f"<div style='text-align: center;'>Created {format_start_time(conversation['start_time'])}</div>")
                     with c3:
-                        st.write(conversation['start_time'])
-                    with c4:
-                        if st.button("Select", key=f"select_{conversation['conversation_id']}"):
+                        if st.button("Select", key=f"select_{conversation['conversation_id']}", use_container_width=True):
                             st.session_state.conversation_id = conversation['conversation_id']
                             st.session_state.conversation_description = conversation['description']
                             st.session_state.current_page = "conversation_page"
                             st.rerun()
-                    with c5:
-                        if st.button("Delete", key=f"delete_{conversation['conversation_id']}"):
+                    with c4:
+                        if st.button("Delete", key=f"delete_{conversation['conversation_id']}", use_container_width=True):
                             response = requests.delete(
                                 f"http://localhost:8000/conversations/{conversation['conversation_id']}",
                                 headers={"Authorization": f"Bearer {st.session_state.access_token}"}
@@ -84,3 +92,5 @@ def chatbot_page():
         st.error(f"Error connecting to the chatbot service: {str(e)}")
         print("session state:")
         pprint.pprint(st.session_state)
+
+    st.session_state.page_load = False

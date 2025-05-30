@@ -110,3 +110,5 @@ def profile_page():
     if cancel_button:
         st.session_state.current_page = "landing_page"
         st.rerun()
+
+    st.session_state.page_load = False

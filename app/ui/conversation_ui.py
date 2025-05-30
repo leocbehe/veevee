@@ -42,14 +42,12 @@ def create_sidebar():
                     # Use different styling for user vs assistant
                     if message['role'] == 'user':
                         st.markdown(f"🙋 {truncated_text}")
-                    else:
+                    elif message['role'] == 'assistant':
                         st.markdown(f"🤖 {truncated_text}")
+                    elif message['role'] == 'system':
+                        st.markdown(f"💿 {truncated_text}")
 
-def conversation_page():
-    # Initialize conversation history in session state if not exists
-    if 'conversation_messages' not in st.session_state:
-        st.session_state.conversation_messages = []
-
+def retrieve_conversation_messages(conversation_id):
     try:
         response = requests.get(
             f"http://localhost:8000/conversations/{st.session_state.conversation_id}",
@@ -63,26 +61,40 @@ def conversation_page():
     except Exception as e:
         st.write(f"Error fetching conversation data: {e}")
 
+def conversation_page():
+    # Retrieve conversation messages
+    if st.session_state.page_load:
+        retrieve_conversation_messages(st.session_state.conversation_id)
+
     # Create the sidebar
     create_sidebar()
     
     # Simple header without sticky positioning
     st.markdown(f"<h2 style='text-align: center;'>Chatting with {st.session_state.chatbot_name}</h2>", unsafe_allow_html=True)
     st.divider()
+
+
         
     # Display conversation history
     for message in st.session_state.conversation_messages:
         if message['role'] == 'user':
             st.chat_message("user").write(message['message_text'])
-        else:
+        elif message['role'] == 'assistant':
             st.chat_message("assistant").write(message['message_text'])
+        elif message['role'] == 'system':
+            st.chat_message("system").write(message['message_text'])
     
     # Input for new message
     user_input = st.chat_input("Type your message...")
+
     
     # main entry point for inference
     if user_input:
+        print(f"\nconversation messages: {st.session_state.conversation_messages}\n")
+        st.chat_message("user").write(user_input)
         handle_user_input(user_input)
+
+    st.session_state.page_load = False
 
 def handle_user_input(user_input):
     """The main function to handle user input and generate chatbot responses."""
