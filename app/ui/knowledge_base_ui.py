@@ -137,7 +137,7 @@ def knowledge_base_page():
                         )
             st.html("<hr>")
 
-    col1, col2, _ = st.columns([2, 1, 4])
+    col1, col2, _ = st.columns([3, 2, 5])
     with col1:
         if st.button("⬅️ Back to Chatbot Page", use_container_width=True):
             del st.session_state.uploaded_documents
