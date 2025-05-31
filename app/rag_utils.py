@@ -59,13 +59,8 @@ def chunk_text(text: str, chunk_size: int = 1000):
         chunks.append(current_chunk.strip())
     return chunks
 
-@st.cache_resource
-def load_embedding_model():
+def text_to_embedding(chunk: str):
     from sentence_transformers import SentenceTransformer
     model = SentenceTransformer('all-mpnet-base-v2')
-    return model
-
-def text_to_embedding(chunk: str):
-    model = load_embedding_model()
     embedding = np.array(model.encode(chunk))
     return embedding
