@@ -169,9 +169,12 @@ def generate_knowledge_base_context(user_prompt_text):
     context_text = []
     # look through the 5 chunks most similar to the user prompt. if the cosine similarity is > 0.5, add the chunk to the context.
     for chunk in chunks[:5]:
-        if cosine_similarity(np.array(chunk['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0] > 0.5:
+        if cosine_similarity(np.array(chunk['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0] > 0.4:
             print(f"Adding chunk to context: {chunk['chunk_text']}")
             context_text.append(chunk['chunk_text'])
+        else:
+            print(f"cosine similarity: {cosine_similarity(np.array(chunk['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0]}")
+            print(f"Skipping chunk: {chunk['chunk_text']}")
 
     context_message = "\n\n".join(context_text)
 

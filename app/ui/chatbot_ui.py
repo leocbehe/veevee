@@ -37,10 +37,15 @@ def chatbot_page():
             st.session_state.current_page = "knowledge_base_page"
             st.rerun()
 
-    st.write(f"**Chatbot Name:** {st.session_state.chatbot_name}")
-    st.write(f"**Chatbot Model Name:** {st.session_state.chatbot_model_name}")
-    st.write(f"**Chatbot Description:** {st.session_state.chatbot_description}")
-    st.html("<div style='text-align: center; font-size: 28px; font-weight: bold;'>Conversations</div>")
+    st.html(f"""
+    <div style='text-align:center;font-size:32px;font-weight:bold;margin-bottom:0px;'>{st.session_state.chatbot_name}</div>
+    <div style='text-align:center;font-size:16px;font-family:Consolas;margin-top:0px;'>Model Name: {st.session_state.chatbot_model_name}</div>
+    <div style='text-align:center;font-size:16px;font-family:Consolas;margin-top:0px;'>Provider: {st.session_state.chatbot_config['inference_provider']}</div>
+    <hr style='margin-top:16px;'>
+    """)
+    st.html(f"<div style='text-align:center;font-size:16px;font-style:italic;margin-top:0px;'>{st.session_state.chatbot_description}</div>")
+    st.html("<hr>")
+    st.html("<div style='text-align: center; font-size: 24px; font-weight: bold;'>Conversations</div>")
 
     # display all conversations for this chatbot 
     try:
@@ -48,7 +53,6 @@ def chatbot_page():
             f"http://localhost:8000/conversations/by_chatbot/{st.session_state.chatbot_id}",
             headers={"Authorization": f"Bearer {st.session_state.access_token}"}
         )
-        print(f"Response status code: {response.status_code}")
         if response.status_code == 200:
             conversations = response.json()
             if conversations:
@@ -75,7 +79,6 @@ def chatbot_page():
                                 st.success(f"Conversation {conversation['conversation_id']} deleted successfully.")
                             else:
                                 st.write(f"Error deleting conversation {conversation['conversation_id']}: {response.status_code}")
-                                st.write(response.status_code)
                             st.rerun()
 
 

@@ -63,7 +63,7 @@ def knowledge_base_page():
     context statement is then prepended to the text of the document itself, and the
     whole thing is set as the chatbot's system prompt.
     """
-    st.header("Manage Knowledge Base")
+    st.header(f"Manage Knowledge Base - {st.session_state.chatbot_name}")
 
     # uploaded_documents is the list of documents that have previously been uploaded
     # to the chatbot's knowledge base. new_documents is the list of documents that
@@ -128,7 +128,6 @@ def knowledge_base_page():
                         },
                     )
                     if response.status_code == 204:
-                        st.success(f"Document '{file_data['file_name']}' deleted.")
                         st.session_state.uploaded_documents.remove(file_data)
                         st.rerun()
                     else:
@@ -141,12 +140,13 @@ def knowledge_base_page():
     with col1:
         if st.button("⬅️ Back to Chatbot Page", use_container_width=True):
             del st.session_state.uploaded_documents
-            del st.session_state.new_documents
+            st.session_state.new_documents = []
             delete_cache()
             st.session_state.current_page = "chatbot_page"
             st.rerun()
     with col2:
         if st.button("Save"):
+            new_documents = []
             for document in st.session_state.new_documents:
                 if document["file_name"] in [ d["file_name"] for d in st.session_state.uploaded_documents ]:
                     print(f"skipping {document['file_name']} because it already exists")
@@ -162,7 +162,6 @@ def knowledge_base_page():
                     "created_at": document["created_at"],
                 }
 
-                print(f"calling create document with {json_params}")
                 requests.post(
                     "http://localhost:8000/documents/",
                     json=json_params,
@@ -173,7 +172,7 @@ def knowledge_base_page():
             
             delete_cache()
             del st.session_state.uploaded_documents
-            del st.session_state.new_documents
+            st.session_state.new_documents = []
             st.rerun()
 
     st.session_state.page_load = False

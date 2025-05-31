@@ -256,6 +256,7 @@ def chatbot_edit_page():
         
         # Refresh data if successful
         if success:
+            st.session_state.current_page = "landing_page"
             refresh_cached_data(st.session_state.chatbot_id, st.session_state.access_token, cache_key)
 
     st.session_state.page_load = False
