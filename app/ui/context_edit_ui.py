@@ -88,7 +88,7 @@ def context_edit_page():
     except Exception as e:
         st.error(f"Error connecting to the document service: {str(e)}")
 
-    if st.button("Back to Knowledge Base"):
+    if st.button("⬅️ Back to Knowledge Base"):
         st.session_state.current_page = "knowledge_base_page"
         st.session_state.document_id = None
         st.rerun()

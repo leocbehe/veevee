@@ -114,7 +114,7 @@ def render_edit_form(chatbot_data):
         col1, col2, col3 = st.columns([1, 2, 1])
         
         with col1:
-            back_button = st.form_submit_button("Back to Chatbots", use_container_width=True)
+            back_button = st.form_submit_button("⬅️ Back to Chatbots", use_container_width=True)
 
         with col3:    
             submit_button = st.form_submit_button(label="Save Changes", use_container_width=True)

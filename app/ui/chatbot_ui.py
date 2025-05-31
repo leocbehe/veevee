@@ -27,7 +27,7 @@ def chatbot_page():
 
     h1, h2, h3 = st.columns([0.3, 0.4, 0.3])
     with h1:
-        if st.button("Back", use_container_width=True):
+        if st.button("⬅️ Back", use_container_width=True):
             st.session_state.current_page = "landing_page"
             st.rerun()
     with h2:

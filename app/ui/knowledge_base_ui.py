@@ -121,7 +121,7 @@ def knowledge_base_page():
 
     col1, col2, _ = st.columns([2, 1, 4])
     with col1:
-        if st.button("Back to Chatbot Page", use_container_width=True):
+        if st.button("⬅️ Back to Chatbot Page", use_container_width=True):
             del st.session_state.uploaded_documents
             del st.session_state.new_documents
             delete_cache()
