@@ -3,6 +3,10 @@ import requests
 from datetime import datetime
 import uuid
 
+def logout():
+    # Clear session state
+    st.session_state.clear()
+
 def landing_page():
     # Initialize session state variables
     if "show_chatbot_form" not in st.session_state:
@@ -112,10 +116,12 @@ def landing_page():
     except Exception as e:
         st.error(f"Error connecting to the chatbot service: {str(e)}")
 
-    c1, c2, c3 = st.columns([1, 3, 1])
+    c1, c2, c3 = st.columns([1, 1, 1])
     with c1:
         st.button("Edit Profile", on_click=open_profile_page, use_container_width=True)
-    with c3:
+    with c2:
         st.button("New Chatbot", on_click=create_new_chatbot, use_container_width=True)
+    with c3:
+        st.button("Logout", on_click=logout, use_container_width=True)
 
     st.session_state.page_load = False
