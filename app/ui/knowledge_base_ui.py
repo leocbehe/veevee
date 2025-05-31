@@ -36,6 +36,21 @@ def get_knowledge_base_documents(chatbot_id):
         return []
 
 
+def format_upload_date(date_str):
+    """Format the upload date to MM/DD/YYYY format"""
+    try:
+        # Parse the datetime string (handle both ISO format with and without 'Z')
+        if date_str.endswith('Z'):
+            dt = datetime.datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+        else:
+            dt = datetime.datetime.fromisoformat(date_str)
+        # Format as "MM/DD/YYYY"
+        return dt.strftime("%m/%d/%Y")
+    except:
+        # If parsing fails, return the original string
+        return date_str
+
+
 def knowledge_base_page():
     """
     Streamlit UI for managing knowledge base documents.
@@ -87,12 +102,14 @@ def knowledge_base_page():
     st.session_state.uploaded_documents.sort(key=lambda x: x["file_name"])
 
     with st.container():
+        st.html("<hr>")
         for file_data in st.session_state.uploaded_documents:
-            col1, col2, col3, col4 = st.columns([4, 2, 2, 1])
+            col1, col2, col3, col4 = st.columns([5, 3, 2, 1])
             with col1:
                 st.write(f"- {file_data['file_name']}")
             with col2:
-                st.write(f"Uploaded: {file_data['created_at']}")
+                formatted_date = format_upload_date(file_data['created_at'])
+                st.write(f"Uploaded: {formatted_date}")
             with col3:
                 if st.button("Edit Context", key=file_data["file_name"]):
                     st.session_state.document_id = file_data["document_id"]
@@ -118,6 +135,7 @@ def knowledge_base_page():
                         st.error(
                             f"Failed to delete document '{file_data['file_name']}'."
                         )
+            st.html("<hr>")
 
     col1, col2, _ = st.columns([2, 1, 4])
     with col1:
