@@ -40,7 +40,7 @@ def chatbot_page():
     st.write(f"**Chatbot Name:** {st.session_state.chatbot_name}")
     st.write(f"**Chatbot Model Name:** {st.session_state.chatbot_model_name}")
     st.write(f"**Chatbot Description:** {st.session_state.chatbot_description}")
-    st.subheader("Conversations:")
+    st.html("<div style='text-align: center; font-size: 28px; font-weight: bold;'>Conversations</div>")
 
     # display all conversations for this chatbot 
     try:
@@ -52,17 +52,8 @@ def chatbot_page():
         if response.status_code == 200:
             conversations = response.json()
             if conversations:
-                a1,a2,a3,a4 = st.columns([0.2, 0.3, 0.3, 0.2], border=False)
-                st.divider()
-                with a1:
-                    st.html("<div style='text-align: center; border-right: 1px solid #ccc; padding-right: 10px;'>Description</div>")
-                with a2:
-                    st.html("<div style='text-align: center; border-right: 1px solid #ccc; padding-right: 10px;'>Start Time</div>")
-                with a3:
-                    st.html("<div style='text-align: center; border-right: 1px solid #ccc; padding-right: 10px;'>Select</div>")
-                with a4:
-                    st.html("<div style='text-align: center;'>Delete</div>")
                 for conversation in conversations:
+                    st.divider()
                     c1,c2,c3,c4 = st.columns([0.2, 0.3, 0.3, 0.2], border=False)
                     with c1:
                         st.html(f"<div style='text-align: center;'>{conversation['description']}</div>")

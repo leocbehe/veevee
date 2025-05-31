@@ -90,14 +90,14 @@ def conversation_page():
     
     # main entry point for inference
     if user_input:
-        print(f"\nconversation messages: {st.session_state.conversation_messages}\n")
-        st.chat_message("user").write(user_input)
         handle_user_input(user_input)
 
     st.session_state.page_load = False
 
 def handle_user_input(user_input):
-    """The main function to handle user input and generate chatbot responses."""
+    if not st.session_state.conversation_messages:
+        st.session_state.conversation_description = user_input[:30]+"..." if len(user_input) > 30 else user_input
+    st.chat_message("user").write(user_input)
     st.session_state.conversation_messages.append({
         "role": "user", 
         "message_text": user_input,
@@ -106,7 +106,6 @@ def handle_user_input(user_input):
     })
     
     # Generate chatbot response
-    print(f"Generating response for user input: {user_input}")
     response_text = generate_response(st.session_state.conversation_messages)
 
     if not response_text:
@@ -251,7 +250,7 @@ def create_conversation():
                 "user_id": st.session_state.user_id,
                 "conversation_id": st.session_state.conversation_id,
                 "chatbot_id": st.session_state.chatbot_id,
-                "description": st.session_state.new_conversation_description if st.session_state.new_conversation_description else "New Conversation",
+                "description": "New Conversation",
                 "start_time": datetime.datetime.now().isoformat(),
                 "last_modified": datetime.datetime.now().isoformat(),
                 "is_active": True
@@ -269,13 +268,16 @@ def create_conversation():
     return st.session_state.conversation_id
 
 def update_messages_backend(conversation_id, messages):
+    print(f"updating messages for conversation {conversation_id}")
+    print(f"desc: {st.session_state.conversation_description}")
     try:
         response = requests.put(
             f"http://localhost:8000/conversations/",
             json={
                 "conversation_id": conversation_id,
                 "messages": messages,
-                "last_modified": datetime.datetime.now().isoformat()
+                "last_modified": datetime.datetime.now().isoformat(),
+                "description": st.session_state.conversation_description if st.session_state.conversation_description else "New Conversation",
             },
             headers={"Authorization": f"Bearer {st.session_state.access_token}"}
         )
