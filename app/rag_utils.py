@@ -1,15 +1,8 @@
 import streamlit as st
 from .config import settings
 import os
-import nltk
 import numpy as np
-from nltk.tokenize import sent_tokenize
 from pypdf import PdfReader
-try:
-    nltk.data.find('tokenizers/punkt')
-except Exception:
-    nltk.download('punkt')
-    nltk.download('punkt_tab')
 
 def get_pdf_text(file_path: str):
     text = ""
@@ -38,7 +31,14 @@ def delete_cache():
         os.remove(os.path.join(cache_dir, file_name))
 
 def chunk_text(text: str, chunk_size: int = 1000):
-    print("tokenizing text...")
+    import nltk
+    try:
+        nltk.data.find('tokenizers/punkt')
+    except Exception:
+        nltk.download('punkt')
+        nltk.download('punkt_tab')
+    from nltk.tokenize import sent_tokenize
+    
     sentences = sent_tokenize(text)
     chunks = []
     current_chunk = ""
@@ -61,6 +61,7 @@ def chunk_text(text: str, chunk_size: int = 1000):
 
 def text_to_embedding(chunk: str):
     from sentence_transformers import SentenceTransformer
+    
     model = SentenceTransformer('all-mpnet-base-v2')
     embedding = np.array(model.encode(chunk))
     return embedding
