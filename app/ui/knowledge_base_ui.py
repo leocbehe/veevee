@@ -146,29 +146,28 @@ def knowledge_base_page():
             st.rerun()
     with col2:
         if st.button("Save"):
-            new_documents = []
-            for document in st.session_state.new_documents:
-                if document["file_name"] in [ d["file_name"] for d in st.session_state.uploaded_documents ]:
-                    print(f"skipping {document['file_name']} because it already exists")
-                    continue
-                abs_file_path = cache_file(document)
-            for document in st.session_state.new_documents:
-                json_params = {
-                    "document_id": str(uuid.uuid4()),
-                    "chatbot_id": st.session_state.chatbot_id,
-                    "file_name": document["file_name"],
-                    "context": document["context"],
-                    "file_path": abs_file_path,
-                    "created_at": document["created_at"],
-                }
-
-                requests.post(
-                    "http://localhost:8000/documents/",
-                    json=json_params,
-                    headers={
-                        "Authorization": f"Bearer {st.session_state.access_token}"
-                    },
-                )
+            with st.spinner("Uploading documents..."):
+                for document in st.session_state.new_documents:
+                    if document["file_name"] in [ d["file_name"] for d in st.session_state.uploaded_documents ]:
+                        print(f"skipping {document['file_name']} because it already exists")
+                        continue
+                    abs_file_path = cache_file(document)
+                for document in st.session_state.new_documents:
+                    json_params = {
+                        "document_id": str(uuid.uuid4()),
+                        "chatbot_id": st.session_state.chatbot_id,
+                        "file_name": document["file_name"],
+                        "context": document["context"],
+                        "file_path": abs_file_path,
+                        "created_at": document["created_at"],
+                    }
+                    requests.post(
+                        "http://localhost:8000/documents/",
+                        json=json_params,
+                        headers={
+                            "Authorization": f"Bearer {st.session_state.access_token}"
+                        },
+                    )
             
             delete_cache()
             del st.session_state.uploaded_documents
