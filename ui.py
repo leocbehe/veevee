@@ -125,18 +125,17 @@ if 'access_token' in st.session_state and st.session_state.access_token and is_t
     st.session_state.page_load = True
 else:
     st.markdown("<h1 style='text-align: center;'>VeeVee UI</h1>", unsafe_allow_html=True)
-    st.warning("Warning: Refreshing the page will log you out!")
 
     with st.form("login_form"):
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
         button1, button2 = st.columns([0.5, 0.5], border=False)
         with button1:
-            submit_button = st.form_submit_button("Login")
+            submit_button = st.form_submit_button("Login", use_container_width=True)
             if submit_button:
                 login()
         with button2:
-            create_user_button = st.form_submit_button("Create User")
+            create_user_button = st.form_submit_button("Create User", use_container_width=True)
             if create_user_button:
                 create_user()
         
