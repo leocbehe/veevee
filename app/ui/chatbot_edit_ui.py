@@ -93,7 +93,7 @@ def render_edit_form(chatbot_data):
                         actually being run")
         inference_url = st.text_input("Inference URL", 
                                     value=chatbot_data.get("configuration", {}).get("inference_url", ""),
-                                    help="URL for the inference API endpoint")
+                                    help="URL where the model is running. This is generally only needed for ollama models.")
         max_response_tokens = st.number_input("Max Response Tokens", min_value=1, max_value=50000, step=1, value=chatbot_data.get("configuration", {}).get("max_response_tokens", 1000), 
                                      help="The maximum number of tokens that the model can produce in a single response.")
         temperature = st.slider("Temperature", 
@@ -111,7 +111,7 @@ def render_edit_form(chatbot_data):
         is_active = st.checkbox("Active", value=chatbot_data.get("is_active", True))
         
         # Form buttons
-        col1, col2, col3 = st.columns([1, 2, 1])
+        col1, col2, col3 = st.columns([1, 1, 1])
         
         with col1:
             back_button = st.form_submit_button("⬅️ Back to Chatbots", use_container_width=True)
