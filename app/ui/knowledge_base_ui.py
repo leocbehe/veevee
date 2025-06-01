@@ -3,7 +3,7 @@ import os
 import datetime
 import requests
 import uuid
-from ..rag_utils import delete_cache
+from ..rag_utils import delete_cache, get_document_text, get_embedded_chunks
 from ..config import settings
 
 
@@ -146,28 +146,32 @@ def knowledge_base_page():
             st.rerun()
     with col2:
         if st.button("Save"):
-            with st.spinner("Uploading documents..."):
-                for document in st.session_state.new_documents:
-                    if document["file_name"] in [ d["file_name"] for d in st.session_state.uploaded_documents ]:
-                        print(f"skipping {document['file_name']} because it already exists")
-                        continue
-                    abs_file_path = cache_file(document)
-                for document in st.session_state.new_documents:
-                    json_params = {
-                        "document_id": str(uuid.uuid4()),
-                        "chatbot_id": st.session_state.chatbot_id,
-                        "file_name": document["file_name"],
-                        "context": document["context"],
-                        "file_path": abs_file_path,
-                        "created_at": document["created_at"],
-                    }
-                    requests.post(
-                        "http://localhost:8000/documents/",
-                        json=json_params,
-                        headers={
-                            "Authorization": f"Bearer {st.session_state.access_token}"
-                        },
-                    )
+            for document in st.session_state.new_documents:
+                if document["file_name"] in [ d["file_name"] for d in st.session_state.uploaded_documents ]:
+                    print(f"skipping {document['file_name']} because it already exists")
+                    continue
+                abs_file_path = cache_file(document)
+            for document in st.session_state.new_documents:
+                new_document_id = str(uuid.uuid4())
+                document_text = get_document_text(document)
+                chunks = get_embedded_chunks(document_text, new_document_id)
+                json_params = {
+                    "document_id": new_document_id,
+                    "chatbot_id": st.session_state.chatbot_id,
+                    "file_name": document["file_name"],
+                    "raw_text": document_text,
+                    "context": document["context"],
+                    "file_path": abs_file_path,
+                    "created_at": document["created_at"],
+                    "chunks": chunks,
+                }
+                requests.post(
+                    "http://localhost:8000/documents/",
+                    json=json_params,
+                    headers={
+                        "Authorization": f"Bearer {st.session_state.access_token}"
+                    },
+                )
             
             delete_cache()
             del st.session_state.uploaded_documents

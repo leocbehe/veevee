@@ -60,6 +60,23 @@ class ChatbotUpdate(BaseModel):
     model_name: Optional[str] = None
     configuration: Optional[dict] = None
 
+"""Document chunk schemas"""
+
+class DocumentChunkBase(BaseModel):
+    chunk_id: uuid.UUID
+    document_id: uuid.UUID
+    chunk_metadata: Optional[dict] = None
+
+class DocumentChunk(DocumentChunkBase):
+    chunk_text: str
+    chunk_embedding: List[float]
+
+class DocumentChunkText(DocumentChunkBase):
+    chunk_text: str
+
+class DocumentChunkEmbedding(DocumentChunkBase):
+    chunk_embedding: List[float]
+
 """RAG document schemas"""
 
 class KnowledgeBaseDocumentBase(BaseModel):
@@ -80,6 +97,7 @@ class KnowledgeBaseDocumentCreate(KnowledgeBaseDocumentBase):
     file_path: Optional[str] = None
     document_metadata: Optional[dict] = None
     raw_text: Optional[str] = None
+    chunks: Optional[List[DocumentChunk]] = []
 
 class KnowledgeBaseDocumentUpdate(BaseModel):
     chatbot_id: Optional[uuid.UUID] = None
@@ -88,26 +106,10 @@ class KnowledgeBaseDocumentUpdate(BaseModel):
     file_path: Optional[str] = None
     document_metadata: Optional[dict] = None
     raw_text: Optional[str] = None
+    chunks: Optional[List[DocumentChunk]] = []
 
     class Config:
         from_attributes = True
-
-"""Document chunk schemas"""
-
-class DocumentChunkBase(BaseModel):
-    chunk_id: uuid.UUID
-    document_id: uuid.UUID
-    chunk_metadata: Optional[dict] = None
-
-class DocumentChunk(DocumentChunkBase):
-    chunk_text: str
-    chunk_embedding: List[float]
-
-class DocumentChunkText(DocumentChunkBase):
-    chunk_text: str
-
-class DocumentChunkEmbedding(DocumentChunkBase):
-    chunk_embedding: List[float]
 
 """Message schemas"""
 
@@ -155,7 +157,7 @@ class ConversationUpdate(ConversationBase):
     description: Optional[str] = None
     last_modified: Optional[datetime] = None
     is_active: Optional[bool] = None
-    messages: Optional[List[MessageCreate]] = None
+    messages: Optional[List[MessageCreate]] = []
 
 class ConversationDeletionConfirmation(ConversationBase):
     pass

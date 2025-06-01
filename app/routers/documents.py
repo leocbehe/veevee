@@ -2,11 +2,13 @@ from ..database import get_db
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from ..rag_utils import read_tmp_document, chunk_text, text_to_embedding
+from ..rag_utils import get_document_text, get_embedded_chunks
 from typing import List
 
 from app import models, schemas
 from app.oauth2 import get_current_user
+
+import uuid
 
 router = APIRouter(
     prefix="/documents",
@@ -14,7 +16,7 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-@router.post("/", response_model=schemas.KnowledgeBaseDocumentCreate, status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED)
 def create_document(document: schemas.KnowledgeBaseDocumentCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     """
     Create a new document.
@@ -26,15 +28,28 @@ def create_document(document: schemas.KnowledgeBaseDocumentCreate, db: Session =
     if chatbot.owner_id != current_user.user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to add documents to this chatbot")
 
-    db_document = models.KnowledgeBaseDocument(**document.model_dump())
-    db_document.raw_text = read_tmp_document(document.file_name)
-    chunks = chunk_text(db_document.raw_text)
+    print("CREATING KNOWLEDGE BASE DOCUMENT")
     
-    for c in chunks:
-        emb = text_to_embedding(c)
-        document_chunk = models.DocumentChunk(document_id=db_document.document_id, chunk_text=c, chunk_embedding=emb)
-        db_document.chunks.append(document_chunk)
+    chunk_objects = []
+    if document.chunks:
+        for chunk in document.chunks:
+            chunk_objects.append(models.DocumentChunk(
+                chunk_id=uuid.uuid4(),
+                document_id=document.document_id,
+                chunk_text=chunk.chunk_text,
+                chunk_embedding=chunk.chunk_embedding,
+            ))
 
+    db_document = models.KnowledgeBaseDocument(
+        document_id=document.document_id,
+        chatbot_id=document.chatbot_id,
+        file_name=document.file_name,
+        raw_text=document.raw_text,
+        context=document.context,
+        created_at=document.created_at,
+        chunks=chunk_objects,
+        )
+    
     db.add(db_document)
     db.commit()
     db.refresh(db_document)

@@ -1,8 +1,42 @@
 import streamlit as st
 from .config import settings
 import os
+import uuid
 import numpy as np
+from .models import DocumentChunk, KnowledgeBaseDocument
 from pypdf import PdfReader
+
+def read_tmp_document(file_name: str):
+    abs_file_path = os.path.join(settings.app_dir, "tmp", file_name)
+    print(f"Reading cache file {abs_file_path}")
+    if file_name.endswith(".pdf"):
+        return get_pdf_text(abs_file_path)
+    else:
+        with open(abs_file_path, "r", encoding="utf-8") as f:
+            return f.read()
+
+def get_embedded_chunks(document_text, document_id) -> list[dict]:
+    from sentence_transformers import SentenceTransformer    
+    model = SentenceTransformer('all-mpnet-base-v2')
+    print("chunking text")
+    chunks = chunk_text(document_text)
+    print("embedding chunks")
+    n = len(chunks)
+    embedded_chunks = []
+    # chunk_progress = st.progress(0, "processing chunks...")
+    for i, c in enumerate(chunks):
+        # chunk_progress.progress(float(i/n), "processing chunks...")
+        emb = text_to_embedding(c, model)
+        embedded_chunks.append({
+            "document_id": document_id,
+            "chunk_id": str(uuid.uuid4()),
+            "chunk_text": c,
+            "chunk_embedding": emb.tolist(),
+        })
+    return embedded_chunks
+
+def get_document_text(doc):
+    return read_tmp_document(doc['file_name'])
 
 def get_pdf_text(file_path: str):
     text = ""
@@ -15,15 +49,6 @@ def get_pdf_text(file_path: str):
     except Exception as e:
         print(f"Error extracting text from PDF: {e}")
         return ""
-
-def read_tmp_document(file_name: str):
-    abs_file_path = os.path.join(settings.app_dir, "tmp", file_name)
-    print(f"Reading cache file {abs_file_path}")
-    if file_name.endswith(".pdf"):
-        return get_pdf_text(abs_file_path)
-    else:
-        with open(abs_file_path, "r", encoding="utf-8") as f:
-            return f.read()
 
 def delete_cache():
     cache_dir = os.path.join(settings.app_dir, "tmp")
@@ -59,9 +84,9 @@ def chunk_text(text: str, chunk_size: int = 1000):
         chunks.append(current_chunk.strip())
     return chunks
 
-def text_to_embedding(chunk: str):
-    from sentence_transformers import SentenceTransformer
-    
-    model = SentenceTransformer('all-mpnet-base-v2')
+def text_to_embedding(chunk: str, model = None):
+    if not model:
+        from sentence_transformers import SentenceTransformer
+        model = SentenceTransformer('all-mpnet-base-v2')
     embedding = np.array(model.encode(chunk))
     return embedding
