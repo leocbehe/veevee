@@ -18,14 +18,17 @@ def read_tmp_document(file_name: str):
 def get_embedded_chunks(document_text, document_id) -> list[dict]:
     from sentence_transformers import SentenceTransformer    
     model = SentenceTransformer('all-mpnet-base-v2')
-    print("chunking text")
-    chunks = chunk_text(document_text)
-    print("embedding chunks")
-    n = len(chunks)
+
+    print("chunking text...")
+    prog = st.progress(0, "(1 / 2) chunking text...")
+    chunks = chunk_text(document_text, chunking_progress=prog)
+
+    print("embedding chunks...")
     embedded_chunks = []
-    # chunk_progress = st.progress(0, "processing chunks...")
+    n = len(chunks)
+    prog.progress(0, "(2 / 2) embedding chunks...")
     for i, c in enumerate(chunks):
-        # chunk_progress.progress(float(i/n), "processing chunks...")
+        prog.progress(float(i/n), "(2 / 2) embedding chunks...")
         emb = text_to_embedding(c, model)
         embedded_chunks.append({
             "document_id": document_id,
@@ -55,7 +58,7 @@ def delete_cache():
     for file_name in os.listdir(cache_dir):
         os.remove(os.path.join(cache_dir, file_name))
 
-def chunk_text(text: str, chunk_size: int = 1000):
+def chunk_text(text: str, chunk_size: int = 1000, chunking_progress=None):
     import nltk
     try:
         nltk.data.find('tokenizers/punkt')
@@ -65,11 +68,13 @@ def chunk_text(text: str, chunk_size: int = 1000):
     from nltk.tokenize import sent_tokenize
     
     sentences = sent_tokenize(text)
+    n = len(sentences)
     chunks = []
     current_chunk = ""
     previous_sentence = ""
 
-    for sentence in sentences:
+    for i, sentence in enumerate(sentences):
+        chunking_progress.progress(float(i/n), "(1 / 2) chunking text...")
         if len(current_chunk) + len(sentence) + 1 <= chunk_size:
             current_chunk += sentence + " "
         else:
@@ -80,8 +85,8 @@ def chunk_text(text: str, chunk_size: int = 1000):
         previous_sentence = sentence
 
     if current_chunk:
-        print(f"appending chunk: {current_chunk}")
         chunks.append(current_chunk.strip())
+
     return chunks
 
 def text_to_embedding(chunk: str, model = None):
