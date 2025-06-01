@@ -28,8 +28,7 @@ def create_document(document: schemas.KnowledgeBaseDocumentCreate, db: Session =
     if chatbot.owner_id != current_user.user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to add documents to this chatbot")
 
-    print("CREATING KNOWLEDGE BASE DOCUMENT")
-    
+    # convert the list of dictionaries from the document into a list of DocumentChunk objects
     chunk_objects = []
     if document.chunks:
         for chunk in document.chunks:
@@ -40,6 +39,7 @@ def create_document(document: schemas.KnowledgeBaseDocumentCreate, db: Session =
                 chunk_embedding=chunk.chunk_embedding,
             ))
 
+    # create a sqlalchemy object with the same fields but using the DocumentChunk objects instead of the dictionaries
     db_document = models.KnowledgeBaseDocument(
         document_id=document.document_id,
         chatbot_id=document.chatbot_id,

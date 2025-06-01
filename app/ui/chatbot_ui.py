@@ -43,7 +43,8 @@ def chatbot_page():
     <div style='text-align:center;font-size:16px;font-family:Consolas;margin-top:0px;'>Provider: {st.session_state.chatbot_config['inference_provider']}</div>
     <hr style='margin-top:16px;'>
     """)
-    st.html(f"<div style='text-align:center;font-size:16px;font-style:italic;margin-top:0px;'>{st.session_state.chatbot_description}</div>")
+    st.html("<div style='text-align: center; font-size: 24px; font-weight: bold;'>Description</div>")
+    st.html(f"<div style='text-align:center;font-size:16px;margin-top:0px;'>{st.session_state.chatbot_description}</div>")
     st.html("<hr>")
     st.html("<div style='text-align: center; font-size: 24px; font-weight: bold;'>Conversations</div>")
 
@@ -80,6 +81,8 @@ def chatbot_page():
                             else:
                                 st.write(f"Error deleting conversation {conversation['conversation_id']}: {response.status_code}")
                             st.rerun()
+            else:
+                st.write("<div style='text-align:center;'>No conversations yet...</div>", unsafe_allow_html=True)
 
 
     except Exception as e:
