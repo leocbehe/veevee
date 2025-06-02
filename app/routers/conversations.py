@@ -67,7 +67,8 @@ def update_conversation(conversation: schemas.ConversationUpdate, db: Session = 
     if db_conversation is None:
         raise HTTPException(status_code=404, detail="Conversation not found")
     
-    messages = [schemas.MessageCreate(**message.model_dump()) for message in conversation.messages]
+    if conversation.messages:
+        messages = [schemas.MessageCreate(**message.model_dump()) for message in conversation.messages]
     print(f"\n\nmessages: {messages}")
 
     # Update the conversation object with all values except for messages

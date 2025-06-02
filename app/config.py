@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     inference_provider: str
     default_ollama_model: str
     inference_url: str
+    chunk_size: int
     app_dir: str = os.path.dirname(os.path.abspath(__file__))
 
     model_config: SettingsConfigDict = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")

@@ -141,6 +141,7 @@ class Conversation(ConversationBase):
     description: Optional[str] = None
     start_time: datetime
     last_modified: Optional[datetime] = None
+    is_remembered: Optional[bool] = None
     messages: List[Message] = []
 
     class Config:
@@ -157,6 +158,7 @@ class ConversationUpdate(ConversationBase):
     description: Optional[str] = None
     last_modified: Optional[datetime] = None
     is_active: Optional[bool] = None
+    is_remembered: Optional[bool] = None
     messages: Optional[List[MessageCreate]] = []
 
 class ConversationDeletionConfirmation(ConversationBase):

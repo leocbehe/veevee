@@ -68,6 +68,7 @@ def chatbot_page():
                         if st.button("Select", key=f"select_{conversation['conversation_id']}", use_container_width=True):
                             st.session_state.conversation_id = conversation['conversation_id']
                             st.session_state.conversation_description = conversation['description']
+                            st.session_state.conversation_start_time = conversation['start_time']
                             st.session_state.current_page = "conversation_page"
                             st.rerun()
                     with c4:

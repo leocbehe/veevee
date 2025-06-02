@@ -31,6 +31,7 @@ def initialize_session_state():
         "chatbot_model_name",
         "conversation_id",
         "conversation_description",
+        "conversation_start_time",
         "new_conversation_description",
         "document_id",
     ]
@@ -52,6 +53,9 @@ def initialize_session_state():
 
     if "page_load" not in st.session_state:
         st.session_state.page_load = False
+
+    if "remember_conversation" not in st.session_state:
+        st.session_state.remember_conversation = False
 
 def login():
     try:

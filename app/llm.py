@@ -80,8 +80,6 @@ class LLMService:
         elif type(self.client) == InferenceClient:
             try:
                 from pprint import pprint
-                print("PROMPT:")
-                pprint(prompt)
                 response = self.client.chat_completion(
                     messages=prompt,
                     max_tokens=self.max_response_tokens,

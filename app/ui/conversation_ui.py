@@ -3,10 +3,11 @@ import numpy as np
 import requests
 import datetime
 import uuid
+from ..schemas import DocumentChunk
 import pprint
 from sklearn.metrics.pairwise import cosine_similarity
 from ..llm import LLMService
-from ..rag_utils import text_to_embedding
+from ..rag_utils import text_to_embedding, get_embedded_chunks
 
 def create_sidebar():
     """
@@ -18,6 +19,24 @@ def create_sidebar():
             st.session_state.current_page = "chatbot_page"
             st.session_state.conversation_messages = []
             st.rerun()
+        
+        st.divider()
+        
+        # Add remember conversation toggle
+        if 'conversation_messages' in st.session_state and st.session_state.conversation_messages:
+            # Initialize the remembered state if not exists
+            if 'remember_conversation' not in st.session_state:
+                st.session_state.remember_conversation = False
+            
+            remembered = st.checkbox(
+                "💾 Remember this conversation", 
+                value=st.session_state.remember_conversation,
+                help="Toggle to remember/forget this conversation"
+            )
+            
+            # Update session state if checkbox value changed
+            if remembered != st.session_state.remember_conversation:
+                st.session_state.remember_conversation = remembered
         
         st.divider()
         
@@ -47,6 +66,88 @@ def create_sidebar():
                     elif message['role'] == 'system':
                         st.markdown(f"💿 {truncated_text}")
 
+def store_conversation_in_knowledge_base(conversation_id, conversation_messages):
+    """
+    Convert the conversation into a knowledge base item that can be retrieved for context.
+    """
+    conversation_document_id = uuid.uuid5(uuid.NAMESPACE_URL, conversation_id)
+    for message in conversation_messages:
+        if message['role'] == 'user':
+            chunk_metadata = {
+                "context": "The following is a statement made by the user during a conversation with you, the assistant: ",
+            }
+        elif message['role'] == 'assistant':
+            chunk_metadata = {
+                "context": "The following is a statement made by you, the assistant, during a conversation with the user: ",
+            }
+        elif message['role'] == 'system':
+            chunk_metadata = {
+                "context": "The following is information that you should incorporate as part of your background knowledge only if it is relevant to the conversation: ",
+            }
+        embedded_chunks = get_embedded_chunks(message['message_text'], conversation_document_id, chunk_metadata)
+
+    # combine the messages into a single raw text string
+    conversation_text = "\n\n".join([message['role']+": "+message['message_text'] for message in conversation_messages])
+    
+    # retrieve all documents associated with this chatbot ID to see if the conversation has already been stored
+    conversation_document_exists = False
+    try:
+        response = requests.get(
+            f"http://localhost:8000/documents/by_chatbot/{st.session_state.chatbot_id}",
+            headers={"Authorization": f"Bearer {st.session_state.access_token}"}
+        )        
+        response.raise_for_status()
+        documents = response.json()
+        for document in documents:
+            if document['document_id'] == conversation_document_id:
+                conversation_document_exists = True
+    except Exception as e:
+        print(f"Error fetching documents by chatbot ID: {e}")
+        return
+    
+    
+    # if the conversation has not been stored, create a knowledgebasedocument using the conversation data
+    print("CHUNKS: ")
+    pprint.pprint(embedded_chunks)
+    if not conversation_document_exists:
+        try:
+            response = requests.post(
+                f"http://localhost:8000/documents",
+                headers={"Authorization": f"Bearer {st.session_state.access_token}"},
+                json={
+                    "document_id": str(conversation_document_id),
+                    "chatbot_id": st.session_state.chatbot_id,
+                    "file_name": f"conversation_{conversation_id[-6:]}",
+                    "context": st.session_state.conversation_description,
+                    "created_at": st.session_state.conversation_start_time,
+                    "raw_text": conversation_text,
+                    "chunks": embedded_chunks,
+                }
+            )
+            response.raise_for_status()
+        except Exception as e:
+            print(f"Error storing conversation in knowledge base: {e}")
+
+    # if the conversation has been stored, update the knowledgebasedocument with the new conversation data
+    else:
+        try:
+            response = requests.put(
+                f"http://localhost:8000/documents/{conversation_document_id}",
+                headers={"Authorization": f"Bearer {st.session_state.access_token}"},
+                json={
+                    "document_id": conversation_document_id,
+                    "chatbot_id": st.session_state.chatbot_id,
+                    "file_name": f"conversation_{conversation_id[-6:]}",
+                    "context": st.session_state.conversation_description,
+                    "created_at": st.session_state.conversation_start_time,
+                    "raw_text": conversation_text,
+                    "chunks": embedded_chunks,
+                }
+            )
+            response.raise_for_status()
+        except Exception as e:
+            print(f"Error updating conversation in knowledge base: {e}")
+
 def retrieve_conversation_messages(conversation_id):
     try:
         response = requests.get(
@@ -56,6 +157,8 @@ def retrieve_conversation_messages(conversation_id):
         if response.status_code == 200:
             conversation_data = response.json()
             st.session_state.conversation_messages = conversation_data['messages']
+            # Initialize the remembered state from backend data
+            st.session_state.remember_conversation = conversation_data.get('is_remembered', False)
         else:
             st.write(f"Error fetching conversation data: {response.status_code}")
     except Exception as e:
@@ -63,8 +166,7 @@ def retrieve_conversation_messages(conversation_id):
 
 def conversation_page():
     # Retrieve conversation messages
-    if st.session_state.page_load:
-        retrieve_conversation_messages(st.session_state.conversation_id)
+    retrieve_conversation_messages(st.session_state.conversation_id)
 
     # Create the sidebar
     create_sidebar()
@@ -72,8 +174,6 @@ def conversation_page():
     # Simple header without sticky positioning
     st.markdown(f"<h2 style='text-align: center;'>Chatting with {st.session_state.chatbot_name}</h2>", unsafe_allow_html=True)
     st.divider()
-
-
         
     # Display conversation history
     for message in st.session_state.conversation_messages:
@@ -122,7 +222,9 @@ def handle_user_input(user_input):
 
     # update messages on the backend
     update_messages_backend(st.session_state.conversation_id, st.session_state.conversation_messages)
-    
+    # store the conversation in the knowledge base if the feature is enabled
+    if st.session_state.remember_conversation:
+        store_conversation_in_knowledge_base(st.session_state.conversation_id, st.session_state.conversation_messages)
     # Rerun to refresh the page and show new messages
     st.rerun()
 
@@ -175,6 +277,7 @@ def generate_knowledge_base_context(user_prompt_text):
             context_text.append(chunk['chunk_text'])
         else:
             print(f"skipping chunk with cosine similarity: {similarity}")
+            print(f"chunk: {chunk['chunk_text']}")
 
     context_message = "\n\n".join(context_text)
 
@@ -246,6 +349,8 @@ def generate_response(conversation_history):
 
 def create_conversation():
     st.session_state.conversation_id = str(uuid.uuid4())
+    st.session_state.conversation_start_time = datetime.datetime.now().isoformat()
+    st.session_state.last_modified = datetime.datetime.now().isoformat()
     try:
         response = requests.post(
             f"http://localhost:8000/conversations/",
@@ -254,9 +359,10 @@ def create_conversation():
                 "conversation_id": st.session_state.conversation_id,
                 "chatbot_id": st.session_state.chatbot_id,
                 "description": "New Conversation",
-                "start_time": datetime.datetime.now().isoformat(),
-                "last_modified": datetime.datetime.now().isoformat(),
-                "is_active": True
+                "start_time": st.session_state.conversation_start_time,
+                "last_modified": st.session_state.last_modified,
+                "is_active": True,
+                "is_remembered": False,
             },
             headers={"Authorization": f"Bearer {st.session_state.access_token}"}
         )
@@ -273,6 +379,10 @@ def create_conversation():
 def update_messages_backend(conversation_id, messages):
     print(f"updating messages for conversation {conversation_id}")
     print(f"desc: {st.session_state.conversation_description}")
+    
+    # Get the remembered state, defaulting to False if not set
+    is_remembered = st.session_state.get('remember_conversation', False)
+    
     try:
         response = requests.put(
             f"http://localhost:8000/conversations/",
@@ -281,6 +391,7 @@ def update_messages_backend(conversation_id, messages):
                 "messages": messages,
                 "last_modified": datetime.datetime.now().isoformat(),
                 "description": st.session_state.conversation_description if st.session_state.conversation_description else "New Conversation",
+                "is_remembered": is_remembered,
             },
             headers={"Authorization": f"Bearer {st.session_state.access_token}"}
         )

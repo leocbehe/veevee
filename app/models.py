@@ -65,9 +65,10 @@ class Conversation(Base):
     description = Column(String, nullable=True)
     start_time = Column(DateTime(timezone=True), server_default=func.now())
     last_modified = Column(DateTime(timezone=True), nullable=True)
+    is_remembered = Column(Boolean, default=False)
     chatbot = relationship("Chatbot", back_populates="conversations")
     user = relationship("User", back_populates="conversations")
-    messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan")
+    messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan", passive_deletes=True)
 
 
 class Message(Base):

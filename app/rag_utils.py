@@ -15,7 +15,7 @@ def read_tmp_document(file_name: str):
         with open(abs_file_path, "r", encoding="utf-8") as f:
             return f.read()
 
-def get_embedded_chunks(document_text, document_id) -> list[dict]:
+def get_embedded_chunks(document_text, document_id, chunk_metadata=None) -> list[dict]:
     from sentence_transformers import SentenceTransformer    
     model = SentenceTransformer('all-mpnet-base-v2')
 
@@ -30,12 +30,15 @@ def get_embedded_chunks(document_text, document_id) -> list[dict]:
     for i, c in enumerate(chunks):
         prog.progress(float(i/n), "(2 / 2) embedding chunks...")
         emb = text_to_embedding(c, model)
-        embedded_chunks.append({
-            "document_id": document_id,
+        embedded_chunk = {
+            "document_id": str(document_id),
             "chunk_id": str(uuid.uuid4()),
             "chunk_text": c,
             "chunk_embedding": emb.tolist(),
-        })
+        }
+        if chunk_metadata:
+            embedded_chunk['chunk_metadata'] = chunk_metadata
+        embedded_chunks.append(embedded_chunk)
     return embedded_chunks
 
 def get_document_text(doc):
@@ -58,7 +61,7 @@ def delete_cache():
     for file_name in os.listdir(cache_dir):
         os.remove(os.path.join(cache_dir, file_name))
 
-def chunk_text(text: str, chunk_size: int = 1000, chunking_progress=None):
+def chunk_text(text: str, chunk_size: int = settings.chunk_size, chunking_progress=None):
     import nltk
     try:
         nltk.data.find('tokenizers/punkt')
