@@ -79,14 +79,13 @@ class LLMService:
                 return None
         elif type(self.client) == InferenceClient:
             try:
-                from pprint import pprint
                 response = self.client.chat_completion(
                     messages=prompt,
                     max_tokens=self.max_response_tokens,
                     temperature=self.temperature,
                     stream=self.stream,
                     top_p=self.top_p
-                )   
+                )
                 return response
             except Exception as e:
                 print(f"Error generating response from huggingface: {e}")

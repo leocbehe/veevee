@@ -3,6 +3,7 @@ import numpy as np
 import requests
 import datetime
 import uuid
+from ..config import settings
 from ..schemas import DocumentChunk
 import pprint
 from sklearn.metrics.pairwise import cosine_similarity
@@ -107,8 +108,6 @@ def store_conversation_in_knowledge_base(conversation_id, conversation_messages)
     
     
     # if the conversation has not been stored, create a knowledgebasedocument using the conversation data
-    print("CHUNKS: ")
-    pprint.pprint(embedded_chunks)
     if not conversation_document_exists:
         try:
             response = requests.post(
@@ -194,47 +193,11 @@ def conversation_page():
 
     st.session_state.page_load = False
 
-def handle_user_input(user_input):
-    if not st.session_state.conversation_messages:
-        st.session_state.conversation_description = user_input[:30]+"..." if len(user_input) > 30 else user_input
-    st.chat_message("user").write(user_input)
-    st.session_state.conversation_messages.append({
-        "role": "user", 
-        "message_text": user_input,
-        "conversation_id": st.session_state.conversation_id,
-        "timestamp": datetime.datetime.now().isoformat()
-    })
-    
-    # Generate chatbot response
-    response_text = generate_response(st.session_state.conversation_messages)
-
-    if not response_text:
-        st.error("Failed to generate response from the chatbot.")
-        return None
-    
-    # Add chatbot response to conversation history
-    st.session_state.conversation_messages.append({
-        "role": "assistant", 
-        "message_text": response_text,
-        "conversation_id": st.session_state.conversation_id,
-        "timestamp": datetime.datetime.now().isoformat()
-    })
-
-    # update messages on the backend
-    update_messages_backend(st.session_state.conversation_id, st.session_state.conversation_messages)
-    # store the conversation in the knowledge base if the feature is enabled
-    if st.session_state.remember_conversation:
-        store_conversation_in_knowledge_base(st.session_state.conversation_id, st.session_state.conversation_messages)
-    # Rerun to refresh the page and show new messages
-    st.rerun()
-
 def generate_knowledge_base_context(user_prompt_text):
     """Generates context from the knowledge base based on the user's prompt.
     This is done by checking the similarity of the user's question with the chunk embeddings
     in the knowledge base table, then adding any chunks that have relevant embeddings by 
     integrating the chunk text into the prompt."""
-    print(f"Adding knowledge base context...")
- 
     chunks = None
     try:
         # get document ids for the current chatbot
@@ -269,15 +232,16 @@ def generate_knowledge_base_context(user_prompt_text):
     chunks = sorted(chunks, key=lambda x: cosine_similarity(np.array(x['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0], reverse=True)
 
     context_text = []
-    # look through the 5 chunks most similar to the user prompt. if the cosine similarity is > 0.5, add the chunk to the context.
-    for chunk in chunks[:5]:
+    # look through top N chunks most similar to the user prompt. if the cosine similarity is > 0.4, add the chunk to the context.
+    for chunk in chunks[:settings.num_context_chunks]:
+        print(f"> ANALYZING CHUNK: {chunk['chunk_text']}")
         similarity = cosine_similarity(np.array(chunk['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0]
+        print(f" > SIMILARITY: {similarity}")
         if similarity > 0.4:
-            print(f"Adding chunk to context: {chunk['chunk_text']}")
+            print("> Adding chunk to context...")
             context_text.append(chunk['chunk_text'])
         else:
-            print(f"skipping chunk with cosine similarity: {similarity}")
-            print(f"chunk: {chunk['chunk_text']}")
+            print("> Skipping chunk...")
 
     context_message = "\n\n".join(context_text)
 
@@ -317,6 +281,7 @@ def generate_response(conversation_history):
     # remove the user prompt from the conversation history and use it to generate the context message.
     # then add the context message and the user prompt back into the conversation history (in that order)
     user_prompt = formatted_conversation_history.pop(-1)
+
     context_message = generate_knowledge_base_context(user_prompt)
     if context_message:
         add_context_to_conversation(formatted_conversation_history, context_message, use_system_role=service.system_context_allowed)
@@ -325,7 +290,6 @@ def generate_response(conversation_history):
     formatted_conversation_history.append(user_prompt)
 
     response_generator = service.generate(formatted_conversation_history)
-    print(f"response_generator type: {type(response_generator)}")
     if not response_generator:
         print("Failed to initialize the LLM service properly. Please check your configuration.")
         return None
@@ -341,6 +305,7 @@ def generate_response(conversation_history):
             return full_response
         else:
             for chunk in response_generator:
+                # print(chunk.choices[0].delta.content)
                 full_response += chunk.choices[0].delta.content if chunk.choices[0].delta.content else ""
                 response_placeholder.markdown(full_response + "▌")  # Display the updated response with a cursor
             response_placeholder.markdown(full_response)  # Final response without cursor
@@ -370,16 +335,12 @@ def create_conversation():
             print("Conversation created successfully")
         else:
             print(f"Failed to create conversation: {response.status_code} - {response.message_text}")
-            pprint.pprint(st.session_state)
     except Exception as e:
         st.error(f"Error connecting to the chatbot service: {str(e)}")
         return None
     return st.session_state.conversation_id
 
 def update_messages_backend(conversation_id, messages):
-    print(f"updating messages for conversation {conversation_id}")
-    print(f"desc: {st.session_state.conversation_description}")
-    
     # Get the remembered state, defaulting to False if not set
     is_remembered = st.session_state.get('remember_conversation', False)
     
@@ -399,3 +360,40 @@ def update_messages_backend(conversation_id, messages):
             st.error(f"Failed to update messages: {response.status_code} - {response.message_text}")
     except Exception as e:
         st.error(f"Error connecting to the chatbot service: {str(e)}")
+
+def handle_user_input(user_input):
+    """All the logic for the chatbot response should be in this function. The end of this function should mark the point of the 
+    application returning to a standby state."""
+    if not st.session_state.conversation_messages:
+        st.session_state.conversation_description = user_input[:30]+"..." if len(user_input) > 30 else user_input
+    st.chat_message("user").write(user_input)
+    st.session_state.conversation_messages.append({
+        "role": "user", 
+        "message_text": user_input,
+        "conversation_id": st.session_state.conversation_id,
+        "timestamp": datetime.datetime.now().isoformat()
+    })
+
+    with st.spinner("Generating response..."):
+        # Generate chatbot response
+        response_text = generate_response(st.session_state.conversation_messages)
+
+        if not response_text:
+            st.error("Failed to generate response from the chatbot.")
+            return None
+
+        # Add chatbot response to conversation history
+        st.session_state.conversation_messages.append({
+            "role": "assistant", 
+            "message_text": response_text,
+            "conversation_id": st.session_state.conversation_id,
+            "timestamp": datetime.datetime.now().isoformat()
+        })
+
+        # update messages on the backend
+        update_messages_backend(st.session_state.conversation_id, st.session_state.conversation_messages)
+        # store the conversation in the knowledge base if the feature is enabled
+        if st.session_state.remember_conversation:
+            store_conversation_in_knowledge_base(st.session_state.conversation_id, st.session_state.conversation_messages)
+        # Rerun to refresh the page and show new messages
+        st.rerun()

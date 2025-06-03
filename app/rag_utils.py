@@ -19,16 +19,14 @@ def get_embedded_chunks(document_text, document_id, chunk_metadata=None) -> list
     from sentence_transformers import SentenceTransformer    
     model = SentenceTransformer('all-mpnet-base-v2')
 
-    print("chunking text...")
-    prog = st.progress(0, "(1 / 2) chunking text...")
+    prog = st.progress(0, "chunking text...")
     chunks = chunk_text(document_text, chunking_progress=prog)
 
-    print("embedding chunks...")
     embedded_chunks = []
     n = len(chunks)
-    prog.progress(0, "(2 / 2) embedding chunks...")
+    prog.progress(0, "embedding chunks...")
     for i, c in enumerate(chunks):
-        prog.progress(float(i/n), "(2 / 2) embedding chunks...")
+        prog.progress(float(i/n), f"({i} / {n}) embedding chunks...")
         emb = text_to_embedding(c, model)
         embedded_chunk = {
             "document_id": str(document_id),
@@ -82,7 +80,6 @@ def chunk_text(text: str, chunk_size: int = settings.chunk_size, chunking_progre
             current_chunk += sentence + " "
         else:
             if current_chunk:
-                print(f"appending chunk: {current_chunk}")
                 chunks.append(current_chunk.strip())
             current_chunk = previous_sentence + " " + sentence + " "
         previous_sentence = sentence

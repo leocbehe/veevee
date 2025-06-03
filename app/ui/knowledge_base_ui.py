@@ -76,22 +76,17 @@ def knowledge_base_page():
     new_documents = st.file_uploader("Upload documents", accept_multiple_files=True)
 
     if new_documents:
+        st.session_state.new_documents = []
         for new_document in new_documents:
-            # Check if the file has already been uploaded
-            if new_document.name not in [
-                f["file_name"] for f in st.session_state.new_documents
-            ]:
-
-                print(f"appending document to new documents: {new_document}")
-                # Add the file to the session state
-                st.session_state.new_documents.append(
-                    {
-                        "file_name": new_document.name,
-                        "created_at": datetime.datetime.now().isoformat(),
-                        "context": "",  # Initialize context
-                        "file_buffer": new_document.getbuffer(),
-                    }
-                )
+            # Add the file to the session state
+            st.session_state.new_documents.append(
+                {
+                    "file_name": new_document.name,
+                    "created_at": datetime.datetime.now().isoformat(),
+                    "context": "",  # Initialize context
+                    "file_buffer": new_document.getbuffer(),
+                }
+            )
 
     # Display list of uploaded documents
     if "uploaded_documents" not in st.session_state:
@@ -139,18 +134,13 @@ def knowledge_base_page():
     col1, col2, _ = st.columns([3, 2, 5])
     with col1:
         if st.button("⬅️ Back to Chatbot Page", use_container_width=True):
-            del st.session_state.uploaded_documents
+            st.session_state.uploaded_documents = []
             st.session_state.new_documents = []
             delete_cache()
             st.session_state.current_page = "chatbot_page"
             st.rerun()
     with col2:
         if st.button("Save"):
-            for document in st.session_state.new_documents:
-                if document["file_name"] in [ d["file_name"] for d in st.session_state.uploaded_documents ]:
-                    print(f"skipping {document['file_name']} because it already exists")
-                    continue
-                abs_file_path = cache_file(document)
             for document in st.session_state.new_documents:
                 new_document_id = str(uuid.uuid4())
                 document_text = get_document_text(document)
@@ -161,7 +151,6 @@ def knowledge_base_page():
                     "file_name": document["file_name"],
                     "raw_text": document_text,
                     "context": document["context"],
-                    "file_path": abs_file_path,
                     "created_at": document["created_at"],
                     "chunks": chunks,
                 }
@@ -172,9 +161,7 @@ def knowledge_base_page():
                         "Authorization": f"Bearer {st.session_state.access_token}"
                     },
                 )
-            
-            delete_cache()
-            del st.session_state.uploaded_documents
+            st.session_state.uploaded_documents = []
             st.session_state.new_documents = []
             st.rerun()
 

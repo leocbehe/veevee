@@ -69,7 +69,6 @@ def update_conversation(conversation: schemas.ConversationUpdate, db: Session = 
     
     if conversation.messages:
         messages = [schemas.MessageCreate(**message.model_dump()) for message in conversation.messages]
-    print(f"\n\nmessages: {messages}")
 
     # Update the conversation object with all values except for messages
     for key, value in conversation.model_dump(exclude_unset=True, exclude={"messages"}).items():
