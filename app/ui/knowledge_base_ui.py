@@ -3,7 +3,8 @@ import os
 import datetime
 import requests
 import uuid
-from ..rag_utils import delete_cache, get_document_text, get_embedded_chunks
+import os
+from ..rag_utils import delete_cache, read_text_file, read_pdf_file, get_embedded_chunks
 from ..config import settings
 
 
@@ -84,7 +85,7 @@ def knowledge_base_page():
                     "file_name": new_document.name,
                     "created_at": datetime.datetime.now().isoformat(),
                     "context": "",  # Initialize context
-                    "file_buffer": new_document.getbuffer(),
+                    "file_content": new_document
                 }
             )
 
@@ -141,28 +142,35 @@ def knowledge_base_page():
             st.rerun()
     with col2:
         if st.button("Save"):
-            for document in st.session_state.new_documents:
-                new_document_id = str(uuid.uuid4())
-                document_text = get_document_text(document)
-                chunks = get_embedded_chunks(document_text, new_document_id)
-                json_params = {
-                    "document_id": new_document_id,
-                    "chatbot_id": st.session_state.chatbot_id,
-                    "file_name": document["file_name"],
-                    "raw_text": document_text,
-                    "context": document["context"],
-                    "created_at": document["created_at"],
-                    "chunks": chunks,
-                }
-                requests.post(
-                    "http://localhost:8000/documents/",
-                    json=json_params,
-                    headers={
-                        "Authorization": f"Bearer {st.session_state.access_token}"
-                    },
-                )
-            st.session_state.uploaded_documents = []
-            st.session_state.new_documents = []
+            try:
+                with st.spinner("Uploading document..."):
+                    for document in st.session_state.new_documents:
+                        new_document_id = str(uuid.uuid4())
+                        if os.path.splitext(document['file_name'])[1] == ".pdf":
+                            document_text = read_pdf_file(document['file_content'])
+                        else:
+                            document_text = read_text_file(document['file_content'])
+                        chunks = get_embedded_chunks(document_text, new_document_id)
+                        json_params = {
+                            "document_id": new_document_id,
+                            "chatbot_id": st.session_state.chatbot_id,
+                            "file_name": document["file_name"],
+                            "raw_text": document_text,
+                            "context": document["context"],
+                            "created_at": document["created_at"],
+                            "chunks": chunks,
+                        }
+                        requests.post(
+                            "http://localhost:8000/documents/",
+                            json=json_params,
+                            headers={
+                                "Authorization": f"Bearer {st.session_state.access_token}"
+                            },
+                        )
+                del st.session_state.uploaded_documents
+                st.session_state.new_documents = []
+            except Exception as e:
+                st.error(f"Error saving documents: {e}")
             st.rerun()
 
     st.session_state.page_load = False

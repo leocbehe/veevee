@@ -2,7 +2,6 @@ from ..database import get_db
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from ..rag_utils import get_document_text, get_embedded_chunks
 from typing import List
 
 from app import models, schemas

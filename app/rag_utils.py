@@ -5,21 +5,15 @@ import uuid
 import numpy as np
 from .models import DocumentChunk, KnowledgeBaseDocument
 from pypdf import PdfReader
-
-def read_tmp_document(file_name: str):
-    abs_file_path = os.path.join(settings.app_dir, "tmp", file_name)
-    print(f"Reading cache file {abs_file_path}")
-    if file_name.endswith(".pdf"):
-        return get_pdf_text(abs_file_path)
-    else:
-        with open(abs_file_path, "r", encoding="utf-8") as f:
-            return f.read()
+from streamlit.runtime.uploaded_file_manager import UploadedFile
+import io
 
 def get_embedded_chunks(document_text, document_id, chunk_metadata=None) -> list[dict]:
+    prog = st.progress(0, "chunking text...")
+
     from sentence_transformers import SentenceTransformer    
     model = SentenceTransformer('all-mpnet-base-v2')
 
-    prog = st.progress(0, "chunking text...")
     chunks = chunk_text(document_text, chunking_progress=prog)
 
     embedded_chunks = []
@@ -39,20 +33,28 @@ def get_embedded_chunks(document_text, document_id, chunk_metadata=None) -> list
         embedded_chunks.append(embedded_chunk)
     return embedded_chunks
 
-def get_document_text(doc):
-    return read_tmp_document(doc['file_name'])
-
-def get_pdf_text(file_path: str):
-    text = ""
+def read_text_file(text_file: UploadedFile):
+    """Reads the content of a text file and returns it as a string."""
     try:
-        with open(file_path, 'rb') as f:
-            pdf_reader = PdfReader(f)
-            for page in pdf_reader.pages:
-                text += page.extract_text().strip() + "\n\n"
+        return text_file.read().decode(encoding='utf-8')
+    except Exception as e:
+        st.error(f"Error reading text file: {e}")
+        return None
+
+def read_pdf_file(pdf_file: UploadedFile):
+    """Reads the content of a PDF file and returns it as a string."""
+    try:
+        prog = st.progress(0, "reading pdf...")
+        pdf_reader = PdfReader(pdf_file)
+        text = ""
+        n = len(pdf_reader.pages)
+        for i, page in enumerate(pdf_reader.pages):
+            prog.progress(float(i/n), f"({i} / {n}) reading pdf...")
+            text += page.extract_text()
         return text
     except Exception as e:
-        print(f"Error extracting text from PDF: {e}")
-        return ""
+        st.error(f"Error reading PDF file: {e}")
+        return None
 
 def delete_cache():
     cache_dir = os.path.join(settings.app_dir, "tmp")
