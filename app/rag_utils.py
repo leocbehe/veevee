@@ -14,7 +14,7 @@ def get_embedded_chunks(document_text, document_id, chunk_metadata=None) -> list
     from sentence_transformers import SentenceTransformer    
     model = SentenceTransformer('all-mpnet-base-v2')
 
-    chunks = chunk_text(document_text, chunking_progress=prog)
+    chunks = chunk_text(document_text, chunk_size=settings.chunk_size, chunking_progress=prog)
 
     embedded_chunks = []
     n = len(chunks)
@@ -50,7 +50,7 @@ def read_pdf_file(pdf_file: UploadedFile):
         n = len(pdf_reader.pages)
         for i, page in enumerate(pdf_reader.pages):
             prog.progress(float(i/n), f"({i} / {n}) reading pdf...")
-            text += page.extract_text()
+            text += page.extract_text().replace('\x00', '')
         return text
     except Exception as e:
         st.error(f"Error reading PDF file: {e}")
