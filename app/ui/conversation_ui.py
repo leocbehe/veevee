@@ -71,7 +71,7 @@ def store_conversation_in_knowledge_base(conversation_id, conversation_messages)
     """
     Convert the conversation into a knowledge base item that can be retrieved for context.
     """
-    conversation_document_id = uuid.uuid5(uuid.NAMESPACE_URL, conversation_id)
+    conversation_document_id = str(uuid.uuid5(uuid.NAMESPACE_URL, conversation_id))
     for message in conversation_messages:
         if message['role'] == 'user':
             chunk_metadata = {
@@ -100,7 +100,8 @@ def store_conversation_in_knowledge_base(conversation_id, conversation_messages)
         response.raise_for_status()
         documents = response.json()
         for document in documents:
-            if document['document_id'] == conversation_document_id:
+            print(f"Document ID: {document['document_id']}")
+            if str(document['document_id']) == conversation_document_id:
                 conversation_document_exists = True
     except Exception as e:
         print(f"Error fetching documents by chatbot ID: {e}")
@@ -109,12 +110,13 @@ def store_conversation_in_knowledge_base(conversation_id, conversation_messages)
     
     # if the conversation has not been stored, create a knowledgebasedocument using the conversation data
     if not conversation_document_exists:
+        print("Conversation not found in knowledge base. Creating new document.")
         try:
             response = requests.post(
                 f"http://localhost:8000/documents",
                 headers={"Authorization": f"Bearer {st.session_state.access_token}"},
                 json={
-                    "document_id": str(conversation_document_id),
+                    "document_id": conversation_document_id,
                     "chatbot_id": st.session_state.chatbot_id,
                     "file_name": f"conversation_{conversation_id[-6:]}",
                     "context": st.session_state.conversation_description,
@@ -129,6 +131,7 @@ def store_conversation_in_knowledge_base(conversation_id, conversation_messages)
 
     # if the conversation has been stored, update the knowledgebasedocument with the new conversation data
     else:
+        print("Conversation found in knowledge base. Updating document.")
         try:
             response = requests.put(
                 f"http://localhost:8000/documents/{conversation_document_id}",
