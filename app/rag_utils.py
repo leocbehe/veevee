@@ -60,7 +60,10 @@ def delete_cache():
     for file_name in os.listdir(cache_dir):
         os.remove(os.path.join(cache_dir, file_name))
 
-def chunk_text(text: str, chunk_size: int = settings.chunk_size, chunking_progress=st.progress(0, "(1 / 2) chunking text...")):
+def chunk_text(text: str, chunk_size: int = settings.chunk_size, chunking_progress=None):
+    if not chunking_progress:
+        chunking_progress = st.progress(0, "chunking text...")
+
     import nltk
     try:
         nltk.data.find('tokenizers/punkt')
@@ -76,7 +79,7 @@ def chunk_text(text: str, chunk_size: int = settings.chunk_size, chunking_progre
     previous_sentence = ""
 
     for i, sentence in enumerate(sentences):
-        chunking_progress.progress(float(i/n), "(1 / 2) chunking text...")
+        chunking_progress.progress(float(i/n), f"({i}/{n}) chunking text...")
         if len(current_chunk) + len(sentence) + 1 <= chunk_size:
             current_chunk += sentence + " "
         else:
