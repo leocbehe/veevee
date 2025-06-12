@@ -41,7 +41,6 @@ def landing_page():
                 headers={"Authorization": f"Bearer {st.session_state.access_token}"},
             )
             if response.status_code == 200:
-                print("Chatbot created successfully!")
                 st.session_state.chatbot_id = chatbot_id
                 st.session_state.current_page = "chatbot_edit_page"
             else:
@@ -52,9 +51,7 @@ def landing_page():
                 "http://localhost:8000/chatbots/{chatbot_id}",
                 headers={"Authorization": f"Bearer {st.session_state.access_token}"},
             )
-            if response.status_code == 200:
-                print("Reverted changes.")
-            else:
+            if response.status_code != 200:
                 print(f"Failed to delete chatbot: {response.status_code} - {response.text}")
 
 

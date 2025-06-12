@@ -150,9 +150,6 @@ def update_chatbot(chatbot_id, access_token, update_data):
         bool: True if successful, False otherwise
     """
     try:
-        print("SENDING UPDATE REQUEST")
-        print(f"chatbot name: {update_data.get('chatbot_name')}")
-        
         response = requests.patch(
             f"http://localhost:8000/chatbots/{chatbot_id}",
             json=update_data,
@@ -161,7 +158,6 @@ def update_chatbot(chatbot_id, access_token, update_data):
         
         if response.status_code == 200:
             st.success("Chatbot updated successfully!")
-            print("Chatbot updated successfully!")
             return True
         else:
             st.error(f"Failed to update chatbot: {response.status_code} - {response.text}")
@@ -241,8 +237,6 @@ def chatbot_edit_page():
         handle_navigation_back(cache_key)
     
     if submit_button:
-        print("SUBMIT BUTTON PRESSED")
-        
         # Prepare update data (exclude is_active from the update for now)
         update_data = {
             "chatbot_name": form_data["chatbot_name"],

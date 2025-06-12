@@ -72,6 +72,7 @@ def store_conversation_in_knowledge_base(conversation_id, conversation_messages)
     Convert the conversation into a knowledge base item that can be retrieved for context.
     """
     conversation_document_id = str(uuid.uuid5(uuid.NAMESPACE_URL, conversation_id))
+    embedded_chunks = []
     for message in conversation_messages:
         if message['role'] == 'user':
             chunk_metadata = {
@@ -85,7 +86,21 @@ def store_conversation_in_knowledge_base(conversation_id, conversation_messages)
             chunk_metadata = {
                 "context": "The following is information that you should incorporate as part of your background knowledge only if it is relevant to the conversation: ",
             }
-        embedded_chunks = get_embedded_chunks(message['message_text'], conversation_document_id, chunk_metadata)
+        try:
+            response = requests.post(
+                f"http://localhost:8000/documents/create_embedded_document_chunks",
+                headers={"Authorization": f"Bearer {st.session_state.access_token}"},
+                json={
+                    "document_id": conversation_document_id,
+                    "document_text": message['message_text'],
+                    "chunk_metadata": chunk_metadata,
+                }
+            )
+            response.raise_for_status()
+            embedded_chunks.extend(response.json())
+        except requests.HTTPError as e:
+            print(f"Error creating embedded document chunks: {e}")
+            return
 
     # combine the messages into a single raw text string
     conversation_text = "\n\n".join([message['role']+": "+message['message_text'] for message in conversation_messages])
@@ -100,7 +115,6 @@ def store_conversation_in_knowledge_base(conversation_id, conversation_messages)
         response.raise_for_status()
         documents = response.json()
         for document in documents:
-            print(f"Document ID: {document['document_id']}")
             if str(document['document_id']) == conversation_document_id:
                 conversation_document_exists = True
     except Exception as e:
@@ -110,7 +124,6 @@ def store_conversation_in_knowledge_base(conversation_id, conversation_messages)
     
     # if the conversation has not been stored, create a knowledgebasedocument using the conversation data
     if not conversation_document_exists:
-        print("Conversation not found in knowledge base. Creating new document.")
         try:
             response = requests.post(
                 f"http://localhost:8000/documents",
@@ -131,7 +144,6 @@ def store_conversation_in_knowledge_base(conversation_id, conversation_messages)
 
     # if the conversation has been stored, update the knowledgebasedocument with the new conversation data
     else:
-        print("Conversation found in knowledge base. Updating document.")
         try:
             response = requests.put(
                 f"http://localhost:8000/documents/{conversation_document_id}",
@@ -202,6 +214,7 @@ def generate_knowledge_base_context(user_prompt_text):
     in the knowledge base table, then adding any chunks that have relevant embeddings by 
     integrating the chunk text into the prompt."""
     chunks = None
+    user_prompt_embedding = None
     try:
         # get document ids for the current chatbot
         response = requests.get(
@@ -220,31 +233,38 @@ def generate_knowledge_base_context(user_prompt_text):
         if response.status_code == 200:
             chunks = response.json()
         else:
-            st.write(f"unexpected response while fetching chunks from the knowledge base: {response.status_code}")
+            st.write(f"unexpected response from /documents/by_chatbot/: {response.status_code}")
 
     except Exception as e:
         st.error(f"Error connecting to FastAPI route: {e}")
 
     if not chunks:
-        print("No chunks found in the knowledge base.")
         return None
 
     # generate embedding from user prompt
-    user_prompt_embedding = text_to_embedding(user_prompt_text['content']).reshape(1, -1)
+    try:
+        response = requests.post(
+            f"http://localhost:8000/documents/get_chunk_embedding",
+            json={
+                "chunk_text": str(user_prompt_text['content'])
+                },
+            headers={"Authorization": f"Bearer {st.session_state.access_token}"}
+        )
+        if response.status_code == 200:
+            user_prompt_embedding = np.array(response.json()['chunk_embedding']).reshape(1, -1)
+        else:
+            st.write(f"unexpected response while generating embedding from /embeddings/: {response.status_code}")
+    except requests.HTTPError as e:
+        print(f"Error connecting to chunk_embedding route: {e}")
     # sort the chunks by similarity to the user prompt
     chunks = sorted(chunks, key=lambda x: cosine_similarity(np.array(x['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0], reverse=True)
 
     context_text = []
     # look through top N chunks most similar to the user prompt. if the cosine similarity is > 0.4, add the chunk to the context.
     for chunk in chunks[:settings.num_context_chunks]:
-        print(f"> ANALYZING CHUNK: {chunk['chunk_text']}")
         similarity = cosine_similarity(np.array(chunk['chunk_embedding']).reshape(1, -1), user_prompt_embedding)[0][0]
-        print(f" > SIMILARITY: {similarity}")
         if similarity > 0.4:
-            print("> Adding chunk to context...")
             context_text.append(chunk['chunk_text'])
-        else:
-            print("> Skipping chunk...")
 
     context_message = "\n\n".join(context_text)
 
@@ -308,7 +328,6 @@ def generate_response(conversation_history):
             return full_response
         else:
             for chunk in response_generator:
-                # print(chunk.choices[0].delta.content)
                 full_response += chunk.choices[0].delta.content if chunk.choices[0].delta.content else ""
                 response_placeholder.markdown(full_response + "▌")  # Display the updated response with a cursor
             response_placeholder.markdown(full_response)  # Final response without cursor
@@ -334,9 +353,7 @@ def create_conversation():
             },
             headers={"Authorization": f"Bearer {st.session_state.access_token}"}
         )
-        if response.status_code == 200:
-            print("Conversation created successfully")
-        else:
+        if response.status_code != 200:
             print(f"Failed to create conversation: {response.status_code} - {response.message_text}")
     except Exception as e:
         st.error(f"Error connecting to the chatbot service: {str(e)}")

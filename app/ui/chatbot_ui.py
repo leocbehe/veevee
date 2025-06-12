@@ -10,6 +10,7 @@ def chatbot_page():
     if "conversation_description" not in st.session_state:
         st.session_state.conversation_description = ""
 
+
     def open_new_conversation():
         st.session_state.conversation_id = create_conversation()
         st.session_state.current_page = "conversation_page"
@@ -88,7 +89,5 @@ def chatbot_page():
 
     except Exception as e:
         st.error(f"Error connecting to the chatbot service: {str(e)}")
-        print("session state:")
-        pprint.pprint(st.session_state)
 
     st.session_state.page_load = False

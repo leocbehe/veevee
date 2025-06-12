@@ -77,6 +77,15 @@ class DocumentChunkText(DocumentChunkBase):
 class DocumentChunkEmbedding(DocumentChunkBase):
     chunk_embedding: List[float]
 
+class CreateEmbeddedDocumentChunks(BaseModel):
+    document_id: uuid.UUID
+    document_text: str
+    chunk_metadata: Optional[dict] = None
+
+class ChunkEmbedding(BaseModel):
+    chunk_text: str
+    chunk_embedding: Optional[List[float]] = None
+
 """RAG document schemas"""
 
 class KnowledgeBaseDocumentBase(BaseModel):

@@ -18,8 +18,6 @@ def create_conversation(conversation: schemas.ConversationCreate, db: Session = 
     """
     Create a new conversation.
     """
-    print(f"Creating conversation for user {current_user.user_id}")
-    print(f"conversation: {conversation.model_dump()}")
     db_conversation = models.Conversation(**conversation.model_dump())
     db.add(db_conversation)
     db.commit()

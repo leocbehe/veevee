@@ -9,18 +9,12 @@ from streamlit.runtime.uploaded_file_manager import UploadedFile
 import io
 
 def get_embedded_chunks(document_text, document_id, chunk_metadata=None) -> list[dict]:
-    with st.spinner("embedding chunks..."):
-        from sentence_transformers import SentenceTransformer
-        model = SentenceTransformer('all-mpnet-base-v2')
-
+    
     chunks = chunk_text(document_text, chunk_size=settings.chunk_size)
-
     embedded_chunks = []
     n = len(chunks)
-    # prog = st.progress(0, "embedding chunks...")
     for i, c in enumerate(chunks):
-        # prog.progress(float(i/n), f"({i} / {n}) embedding chunks...")
-        emb = text_to_embedding(c, model)
+        emb = text_to_embedding(c)
         embedded_chunk = {
             "document_id": str(document_id),
             "chunk_id": str(uuid.uuid4()),
@@ -30,6 +24,8 @@ def get_embedded_chunks(document_text, document_id, chunk_metadata=None) -> list
         if chunk_metadata:
             embedded_chunk['chunk_metadata'] = chunk_metadata
         embedded_chunks.append(embedded_chunk)
+
+
     return embedded_chunks
 
 def read_text_file(text_file: UploadedFile):
@@ -37,22 +33,22 @@ def read_text_file(text_file: UploadedFile):
     try:
         return text_file.read().decode(encoding='utf-8')
     except Exception as e:
-        st.error(f"Error reading text file: {e}")
+        print(f"Error reading text file: {e}")
         return None
 
 def read_pdf_file(pdf_file: UploadedFile):
     """Reads the content of a PDF file and returns it as a string."""
     try:
-        prog = st.progress(0, "reading pdf...")
+        # prog = st.progress(0, "reading pdf...")
         pdf_reader = PdfReader(pdf_file)
         text = ""
         n = len(pdf_reader.pages)
         for i, page in enumerate(pdf_reader.pages):
-            prog.progress(float(i/n), f"({i} / {n}) reading pdf...")
+            # prog.progress(float(i/n), f"({i} / {n}) reading pdf...")
             text += page.extract_text().replace('\x00', '')
         return text
     except Exception as e:
-        st.error(f"Error reading PDF file: {e}")
+        print(f"Error reading PDF file: {e}")
         return None
 
 def delete_cache():
@@ -61,8 +57,8 @@ def delete_cache():
         os.remove(os.path.join(cache_dir, file_name))
 
 def chunk_text(text: str, chunk_size: int = settings.chunk_size, chunking_progress=None):
-    if not chunking_progress:
-        chunking_progress = st.progress(0, "chunking text...")
+    # if not chunking_progress:
+    #     chunking_progress = st.progress(0, "chunking text...")
 
     import nltk
     try:
@@ -79,7 +75,7 @@ def chunk_text(text: str, chunk_size: int = settings.chunk_size, chunking_progre
     previous_sentence = ""
 
     for i, sentence in enumerate(sentences):
-        chunking_progress.progress(float(i/n), f"({i}/{n}) chunking text...")
+        # chunking_progress.progress(float(i/n), f"({i}/{n}) chunking text...")
         if len(current_chunk) + len(sentence) + 1 <= chunk_size:
             current_chunk += sentence + " "
         else:
@@ -93,9 +89,13 @@ def chunk_text(text: str, chunk_size: int = settings.chunk_size, chunking_progre
 
     return chunks
 
-def text_to_embedding(chunk: str, model = None):
+def text_to_embedding(chunk: str, model=None):
     if not model:
-        from sentence_transformers import SentenceTransformer
-        model = SentenceTransformer('all-mpnet-base-v2')
+        try:
+            import sentence_transformers
+            model = sentence_transformers.SentenceTransformer('all-mpnet-base-v2')
+        except Exception as e:
+            print(f"Error loading Sentence Transformers: {e}")
+            return None
     embedding = np.array(model.encode(chunk))
     return embedding

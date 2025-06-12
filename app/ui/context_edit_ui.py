@@ -36,46 +36,34 @@ def context_edit_page():
             st.divider()
 
             with st.container():
-                col1, col2 = st.columns([5, 1])  # Adjust column widths as needed
+                text_preview_key = f"text_preview_{document['document_id']}"
+                context_key = f"context_{document['document_id']}"
+                if text_preview_key not in st.session_state:
+                    st.session_state[text_preview_key] = (
+                        document["raw_text"][:5000]+"... " or ""
+                    )  # Initialize with existing text preview
+                if context_key not in st.session_state:
+                    st.session_state[context_key] = (
+                        document["context"] or ""
+                    )  # Initialize with existing context
 
+                st.text_area(
+                    "Context:",
+                    value=st.session_state[context_key],
+                    height=100,
+                    key=f"context_area_{document['document_id']}",
+                    label_visibility="visible"
+                )
+
+                col1, col2 = st.columns([1, 2])
                 with col1:
-                    text_preview_key = f"text_preview_{document['document_id']}"
-                    context_key = f"context_{document['document_id']}"
-                    if text_preview_key not in st.session_state:
-                        st.session_state[text_preview_key] = (
-                            document["raw_text"][:5000]+"... " or ""
-                        )  # Initialize with existing text preview
-                    if context_key not in st.session_state:
-                        st.session_state[context_key] = (
-                            document["context"] or ""
-                        )  # Initialize with existing context
-
-                    st.text_area(
-                        "Text Preview:",
-                        value=st.session_state[text_preview_key],
-                        height=200,
-                        key=f"text_preview_area_{document['document_id']}",
-                        label_visibility="visible",
-                    )
-                    st.text_area(
-                        "Context:",
-                        value=st.session_state[context_key],
-                        height=100,
-                        key=f"context_area_{document['document_id']}",
-                        label_visibility="visible"
-                    )
-
-                with col2:
-                    if st.button(
-                        "Update Context", key=f"update_{document['document_id']}"
-                    ):
+                    if st.button("Update Context", key=f"update_{document['document_id']}", use_container_width=True):
                         new_context = st.session_state[context_key]
                         update_context(document["document_id"], new_context)
-                    if st.button("Get Summary", key=f"summary_{document_id}"):
-                        st.session_state.summary_generator = summarize_document(
-                            document_id, document["raw_text"]
-                        )
-                        st.session_state.show_summary = True
+                with col2:
+                    if st.button("⬅️ Back to Knowledge Base", use_container_width=True):
+                        st.session_state.current_page = "knowledge_base_page"
+                        st.session_state.document_id = None
                         st.rerun()
 
         elif response.status_code == 404:
@@ -88,13 +76,10 @@ def context_edit_page():
     except Exception as e:
         st.error(f"Error connecting to the document service: {str(e)}")
 
-    if st.button("⬅️ Back to Knowledge Base"):
-        st.session_state.current_page = "knowledge_base_page"
-        st.session_state.document_id = None
-        st.rerun()
+    # if st.session_state.get("show_summary", False):
+    #     render_popup_summary(st.session_state.summary_generator)
 
-    if st.session_state.get("show_summary", False):
-        render_popup_summary(st.session_state.summary_generator)
+    
 
     st.session_state.page_load = False
 
@@ -107,8 +92,8 @@ def update_context(document_id: uuid.UUID, new_context: str):
         response = requests.put(
             f"http://localhost:8000/documents/{document_id}",
             json={
-                "context": new_context                
-                },
+                "context": new_context
+            },
             headers={"Authorization": f"Bearer {st.session_state.access_token}"},
         )
 
@@ -124,8 +109,12 @@ def update_context(document_id: uuid.UUID, new_context: str):
 
 
 def summarize_document(document_id: uuid.UUID, raw_text: str):
-    summary_service = LLMService("gemma3:12b")
-    order = """ Please summarize the following text in 300 words or less:\n\n"""
+    summary_service = LLMService(
+        st.session_state.chatbot_model_name, 
+        inference_provider=st.session_state.chatbot_config['inference_provider'],
+        inference_url=st.session_state.chatbot_config['inference_url'],
+        max_response_tokens=1000)
+    order = """ Please summarize the following text:\n\n"""
 
     response_generator = summary_service.generate(
         [

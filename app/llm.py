@@ -31,10 +31,6 @@ class LLMService:
         self.max_response_tokens = max_response_tokens
         self.system_context_allowed = system_context_allowed
         self.top_p = top_p
-        print(f"inference_provider: {inference_provider}")
-        if not token:
-            print("""WARNING: no token provided. This may cause an error when attempting to 
-                  run inference from a remote or third-party provider.""", file=sys.stderr)
         if inference_provider == "ollama":
             self.model_name = model_name if model_name else settings.default_ollama_model
             self.client = OllamaClient(host=inference_url)

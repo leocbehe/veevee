@@ -95,9 +95,7 @@ def create_user():
             },
             headers={"Content-Type": "application/json"}
         )
-        print(f"response: {response}")
         if response.status_code == 200:
-            print("User created successfully! Logging you in...")
             login()
         else:
             st.error(f"Failed to create user: {response.status_code} - {response.text}")

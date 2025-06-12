@@ -1,4 +1,5 @@
 from ..database import get_db
+from ..rag_utils import get_embedded_chunks, text_to_embedding
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -86,7 +87,8 @@ def update_document(document_id: str, document: schemas.KnowledgeBaseDocumentUpd
 
     # Update the document with the new values
     for key, value in document.model_dump().items():
-        setattr(db_document, key, value)
+        if value is not None:
+            setattr(db_document, key, value)
 
     db.commit()
     db.refresh(db_document)
@@ -130,7 +132,42 @@ def get_document_chunks(document_ids: List[str], db: Session = Depends(get_db), 
     """
     Retrieve document chunks by document IDs.
     """
-    print(f"Received document IDs: {document_ids}")
 
     chunks = db.query(models.DocumentChunk).filter(models.DocumentChunk.document_id.in_(document_ids)).all()
     return chunks
+
+@router.post("/create_embedded_document_chunks", response_model=List[schemas.DocumentChunk])
+def create_embedded_document_chunks(embedded_document_request: schemas.CreateEmbeddedDocumentChunks, db: Session = Depends(get_db)):
+    """
+    Create embedded document chunks from the provided text.
+    """
+    embedded_chunks = get_embedded_chunks(
+        embedded_document_request.document_text,
+        embedded_document_request.document_id,
+        embedded_document_request.chunk_metadata,
+    )
+
+    # Convert the list of dictionaries to a list of DocumentChunk objects
+    document_chunks = []
+    for chunk in embedded_chunks:
+        document_chunks.append(
+            schemas.DocumentChunk(
+                chunk_id=uuid.UUID(chunk["chunk_id"]),
+                document_id=uuid.UUID(chunk["document_id"]),
+                chunk_text=chunk["chunk_text"],
+                chunk_embedding=chunk["chunk_embedding"],
+                chunk_metadata=chunk.get("chunk_metadata"),
+            )
+        )
+    return document_chunks
+
+@router.post("/get_chunk_embedding", response_model=schemas.ChunkEmbedding)
+def get_chunk_embedding(chunk_embedding_request: schemas.ChunkEmbedding):
+    """
+    Generate an embedding for the given text.
+    """
+    embedding = text_to_embedding(chunk_embedding_request.chunk_text)
+    if embedding is not None:
+        return schemas.ChunkEmbedding(chunk_text=chunk_embedding_request.chunk_text, chunk_embedding=embedding.tolist())
+    else:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to generate embedding")

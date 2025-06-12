@@ -4,7 +4,8 @@ import datetime
 import requests
 import uuid
 import os
-from ..rag_utils import delete_cache, read_text_file, read_pdf_file, get_embedded_chunks
+from pprint import pprint
+from ..rag_utils import delete_cache, read_text_file, read_pdf_file
 from ..config import settings
 
 
@@ -16,7 +17,6 @@ def cache_file(upload_file):
     file_path = os.path.join(temp_dir, upload_file["file_name"])
 
     # save file to temp dir
-    print(f"saving cache file to {file_path}")
     with open(file_path, "wb") as f:
         f.write(upload_file["file_buffer"])
 
@@ -145,28 +145,48 @@ def knowledge_base_page():
             try:
                 with st.spinner("Uploading document..."):
                     for document in st.session_state.new_documents:
-                        new_document_id = str(uuid.uuid4())
-                        if os.path.splitext(document['file_name'])[1] == ".pdf":
-                            document_text = read_pdf_file(document['file_content'])
-                        else:
-                            document_text = read_text_file(document['file_content'])
-                        chunks = get_embedded_chunks(document_text, new_document_id)
-                        json_params = {
-                            "document_id": new_document_id,
-                            "chatbot_id": st.session_state.chatbot_id,
-                            "file_name": document["file_name"],
-                            "raw_text": document_text,
-                            "context": document["context"],
-                            "created_at": document["created_at"],
-                            "chunks": chunks,
-                        }
-                        requests.post(
-                            "http://localhost:8000/documents/",
-                            json=json_params,
-                            headers={
-                                "Authorization": f"Bearer {st.session_state.access_token}"
-                            },
-                        )
+                        with st.spinner(f"uploading {document['file_name']}"):
+                            new_document_id = str(uuid.uuid4())
+                            if os.path.splitext(document['file_name'])[1] == ".pdf":
+                                document_text = read_pdf_file(document['file_content'])
+                            else:
+                                document_text = read_text_file(document['file_content'])
+                            # chunks = get_embedded_chunks(document_text, new_document_id)
+                            # replaced get_embedded_chunks with a call to the create_embedded_document_chunks route
+                        with st.spinner(f"embedding document chunks for {document['file_name']}"):
+                            chunks_response = requests.post(
+                                "http://localhost:8000/documents/create_embedded_document_chunks",
+                                json={
+                                    "document_id": new_document_id,
+                                    "document_text": document_text,
+                                },
+                                headers={
+                                    "Authorization": f"Bearer {st.session_state.access_token}"
+                                },
+                            )
+                            if chunks_response.status_code == 200:
+                                chunks = chunks_response.json()
+                            else:
+                                raise Exception(
+                                    f"Failed to create embedded document chunks: {chunks_response.status_code} - {chunks_response.text}"
+                                )
+                        with st.spinner(f"saving {document['file_name']} to database..."):
+                            json_params = {
+                                "document_id": new_document_id,
+                                "chatbot_id": st.session_state.chatbot_id,
+                                "file_name": document["file_name"],
+                                "raw_text": document_text,
+                                "context": document["context"],
+                                "created_at": document["created_at"],
+                                "chunks": chunks,
+                            }
+                            requests.post(
+                                "http://localhost:8000/documents/",
+                                json=json_params,
+                                headers={
+                                    "Authorization": f"Bearer {st.session_state.access_token}"
+                                },
+                            )
                 del st.session_state.uploaded_documents
                 st.session_state.new_documents = []
             except Exception as e:
